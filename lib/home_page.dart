@@ -31,12 +31,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   QuillController? _controller;
   final FocusNode _focusNode = FocusNode();
-  Timer? _selectAllTimer;
   _SelectionType _selectionType = _SelectionType.none;
 
   @override
   void dispose() {
-    _selectAllTimer?.cancel();
     super.dispose();
   }
 
@@ -48,19 +46,15 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadFromAssets() async {
     try {
-      final result = await rootBundle.loadString(isDesktop()
-          ? 'assets/sample_data_nomedia.json'
-          : 'assets/sample_data.json');
+      final result = await rootBundle.loadString('assets/sample_data.json');
       final doc = Document.fromJson(jsonDecode(result));
       setState(() {
-        _controller = QuillController(
-            document: doc, selection: const TextSelection.collapsed(offset: 0));
+        _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
       });
     } catch (error) {
       final doc = Document()..insert(0, 'Empty asset');
       setState(() {
-        _controller = QuillController(
-            document: doc, selection: const TextSelection.collapsed(offset: 0));
+        _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
       });
     }
   }
@@ -81,31 +75,15 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: [
           IconButton(
-            onPressed: () => _insertTimeStamp(
-              _controller!,
-              DateTime.now().toString(),
-            ),
-            icon: const Icon(Icons.add_alarm_rounded),
-          ),
-          IconButton(
             onPressed: () => showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                content: Text(_controller!.document.toPlainText([
-                  ...FlutterQuillEmbeds.builders(),
-                  TimeStampEmbedBuilderWidget()
-                ])),
+                content: Text(_controller!.document.toPlainText([...FlutterQuillEmbeds.builders(), TimeStampEmbedBuilderWidget()])),
               ),
             ),
             icon: const Icon(Icons.text_fields_rounded),
           )
         ],
-      ),
-      drawer: Container(
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-        color: Colors.grey.shade800,
-        child: _buildMenuBar(context),
       ),
       body: _buildWelcomeEditor(context),
     );
@@ -113,9 +91,6 @@ class _HomePageState extends State<HomePage> {
 
   bool _onTripleClickSelection() {
     final controller = _controller!;
-
-    _selectAllTimer?.cancel();
-    _selectAllTimer = null;
 
     // If you want to select all text after paragraph, uncomment this line
     // if (_selectionType == _SelectionType.line) {
@@ -137,7 +112,6 @@ class _HomePageState extends State<HomePage> {
 
     if (_selectionType == _SelectionType.none) {
       _selectionType = _SelectionType.word;
-      _startTripleClickTimer();
       return false;
     }
 
@@ -159,18 +133,10 @@ class _HomePageState extends State<HomePage> {
 
       _selectionType = _SelectionType.none;
 
-      _startTripleClickTimer();
-
       return true;
     }
 
     return false;
-  }
-
-  void _startTripleClickTimer() {
-    _selectAllTimer = Timer(const Duration(milliseconds: 900), () {
-      _selectionType = _SelectionType.none;
-    });
   }
 
   Widget _buildWelcomeEditor(BuildContext context) {
@@ -210,10 +176,7 @@ class _HomePageState extends State<HomePage> {
           fontFeatures: [FontFeature.superscripts()],
         ),
       ),
-      embedBuilders: [
-        ...FlutterQuillEmbeds.builders(),
-        TimeStampEmbedBuilderWidget()
-      ],
+      embedBuilders: [...FlutterQuillEmbeds.builders(), TimeStampEmbedBuilderWidget()],
     );
     if (kIsWeb) {
       quillEditor = QuillEditor(
@@ -242,27 +205,63 @@ class _HomePageState extends State<HomePage> {
                 null),
             sizeSmall: const TextStyle(fontSize: 9),
           ),
-          embedBuilders: [
-            ...defaultEmbedBuildersWeb,
-            TimeStampEmbedBuilderWidget()
-          ]);
+          embedBuilders: [...defaultEmbedBuildersWeb, TimeStampEmbedBuilderWidget()]);
     }
-    var toolbar = QuillToolbar.basic(
-      controller: _controller!,
-      embedButtons: FlutterQuillEmbeds.buttons(
-        // provide a callback to enable picking images from device.
-        // if omit, "image" button only allows adding images from url.
-        // same goes for videos.
-        onImagePickCallback: _onImagePickCallback,
-        onVideoPickCallback: _onVideoPickCallback,
-        // uncomment to provide a custom "pick from" dialog.
-        // mediaPickSettingSelector: _selectMediaPickSetting,
-        // uncomment to provide a custom "pick from" dialog.
-        // cameraPickSettingSelector: _selectCameraPickSetting,
-      ),
-      showAlignmentButtons: true,
-      afterButtonPressed: _focusNode.requestFocus,
+
+    double toolbarIconSize = 18;
+    final embedButtons = FlutterQuillEmbeds.buttons(
+      // provide a callback to enable picking images from device.
+      // if omit, "image" button only allows adding images from url.
+      // same goes for videos.
+      onImagePickCallback: _onImagePickCallback,
+      // uncomment to provide a custom "pick from" dialog.
+      // mediaPickSettingSelector: _selectMediaPickSetting,
+      // uncomment to provide a custom "pick from" dialog.
+      // cameraPickSettingSelector: _selectCameraPickSetting,
     );
+    var toolbar = QuillToolbar(
+      afterButtonPressed: _focusNode.requestFocus,
+      children: [
+        HistoryButton(
+          icon: Icons.undo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: true,
+        ),
+        HistoryButton(
+          icon: Icons.redo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: false,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.bold,
+          icon: Icons.format_bold,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.italic,
+          icon: Icons.format_italic,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.underline,
+          icon: Icons.format_underline,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.strikeThrough,
+          icon: Icons.format_strikethrough,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+      ],
+    );
+
     if (kIsWeb) {
       toolbar = QuillToolbar.basic(
         controller: _controller!,
@@ -301,8 +300,7 @@ class _HomePageState extends State<HomePage> {
           kIsWeb
               ? Expanded(
                   child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
                   child: toolbar,
                 ))
               : Container(child: toolbar)
@@ -328,13 +326,11 @@ class _HomePageState extends State<HomePage> {
   Future<String> _onImagePickCallback(File file) async {
     // Copies the picked file from temporary cache to applications directory
     final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile =
-        await file.copy('${appDocDir.path}/${basename(file.path)}');
+    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
     return copiedFile.path.toString();
   }
 
-  Future<String?> _webImagePickImpl(
-      OnImagePickCallback onImagePickCallback) async {
+  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
     final result = await FilePicker.platform.pickFiles();
     if (result == null) {
       return null;
@@ -347,20 +343,8 @@ class _HomePageState extends State<HomePage> {
     return onImagePickCallback(file);
   }
 
-  // Renders the video picked by imagePicker from local file storage
-  // You can also upload the picked video to any server (eg : AWS s3
-  // or Firebase) and then return the uploaded video URL.
-  Future<String> _onVideoPickCallback(File file) async {
-    // Copies the picked file from temporary cache to applications directory
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile =
-        await file.copy('${appDocDir.path}/${basename(file.path)}');
-    return copiedFile.path.toString();
-  }
-
   // ignore: unused_element
-  Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) =>
-      showDialog<MediaPickSetting>(
+  Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) => showDialog<MediaPickSetting>(
         context: context,
         builder: (ctx) => AlertDialog(
           contentPadding: EdgeInsets.zero,
@@ -383,8 +367,7 @@ class _HomePageState extends State<HomePage> {
       );
 
   // ignore: unused_element
-  Future<MediaPickSetting?> _selectCameraPickSetting(BuildContext context) =>
-      showDialog<MediaPickSetting>(
+  Future<MediaPickSetting?> _selectCameraPickSetting(BuildContext context) => showDialog<MediaPickSetting>(
         context: context,
         builder: (ctx) => AlertDialog(
           contentPadding: EdgeInsets.zero,
@@ -406,82 +389,10 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-  Widget _buildMenuBar(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    const itemStyle = TextStyle(
-      color: Colors.white,
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-    );
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Divider(
-          thickness: 2,
-          color: Colors.white,
-          indent: size.width * 0.1,
-          endIndent: size.width * 0.1,
-        ),
-        ListTile(
-          title: const Center(child: Text('Read only demo', style: itemStyle)),
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          onTap: () {},
-        ),
-        Divider(
-          thickness: 2,
-          color: Colors.white,
-          indent: size.width * 0.1,
-          endIndent: size.width * 0.1,
-        ),
-      ],
-    );
-  }
-
   Future<String> _onImagePaste(Uint8List imageBytes) async {
     // Saves the image to applications directory
     final appDocDir = await getApplicationDocumentsDirectory();
-    final file = await File(
-            '${appDocDir.path}/${basename('${DateTime.now().millisecondsSinceEpoch}.png')}')
-        .writeAsBytes(imageBytes, flush: true);
+    final file = await File('${appDocDir.path}/${basename('${DateTime.now().millisecondsSinceEpoch}.png')}').writeAsBytes(imageBytes, flush: true);
     return file.path.toString();
-  }
-
-  static void _insertTimeStamp(QuillController controller, String string) {
-    controller.document.insert(controller.selection.extentOffset, '\n');
-    controller.updateSelection(
-      TextSelection.collapsed(
-        offset: controller.selection.extentOffset + 1,
-      ),
-      ChangeSource.LOCAL,
-    );
-
-    controller.document.insert(
-      controller.selection.extentOffset,
-      TimeStampEmbed(string),
-    );
-
-    controller.updateSelection(
-      TextSelection.collapsed(
-        offset: controller.selection.extentOffset + 1,
-      ),
-      ChangeSource.LOCAL,
-    );
-
-    controller.document.insert(controller.selection.extentOffset, ' ');
-    controller.updateSelection(
-      TextSelection.collapsed(
-        offset: controller.selection.extentOffset + 1,
-      ),
-      ChangeSource.LOCAL,
-    );
-
-    controller.document.insert(controller.selection.extentOffset, '\n');
-    controller.updateSelection(
-      TextSelection.collapsed(
-        offset: controller.selection.extentOffset + 1,
-      ),
-      ChangeSource.LOCAL,
-    );
   }
 }
