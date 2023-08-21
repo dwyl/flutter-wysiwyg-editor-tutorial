@@ -201,10 +201,18 @@ class _HomePageState extends State<HomePage> {
 
     const toolbarIconSize = 18.0;
     final embedButtons = FlutterQuillEmbeds.buttons(
+      showCameraButton: false,
+      showFormulaButton: false,
+      showVideoButton: false,
+      showImageButton: true,
+      
       // provide a callback to enable picking images from device.
       // if omit, "image" button only allows adding images from url.
       // same goes for videos.
-      // onImagePickCallback: _onImagePickCallback,
+      onImagePickCallback: _onImagePickCallback,
+      mediaPickSettingSelector: (context) {
+        return Future.value(MediaPickSetting.Gallery);
+      },
       // uncomment to provide a custom "pick from" dialog.
       // mediaPickSettingSelector: _selectMediaPickSetting,
       // uncomment to provide a custom "pick from" dialog.
@@ -249,6 +257,7 @@ class _HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
+
         for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
       ],
     );
@@ -259,17 +268,6 @@ class _HomePageState extends State<HomePage> {
         embedButtons: FlutterQuillEmbeds.buttons(
           onImagePickCallback: _onImagePickCallback,
           webImagePickImpl: _webImagePickImpl,
-        ),
-        showAlignmentButtons: true,
-        afterButtonPressed: _focusNode.requestFocus,
-      );
-    }
-    if (_isDesktop()) {
-      toolbar = QuillToolbar.basic(
-        controller: _controller!,
-        embedButtons: FlutterQuillEmbeds.buttons(
-          onImagePickCallback: _onImagePickCallback,
-          filePickImpl: openFileSystemPickerForDesktop,
         ),
         showAlignmentButtons: true,
         afterButtonPressed: _focusNode.requestFocus,
@@ -297,17 +295,6 @@ class _HomePageState extends State<HomePage> {
               : Container(child: toolbar)
         ],
       ),
-    );
-  }
-
-  bool _isDesktop() => !kIsWeb && !Platform.isAndroid && !Platform.isIOS;
-
-  Future<String?> openFileSystemPickerForDesktop(BuildContext context) async {
-    return await FilesystemPicker.open(
-      context: context,
-      rootDirectory: await getApplicationDocumentsDirectory(),
-      fsType: FilesystemType.file,
-      fileTileSelectMode: FileTileSelectMode.wholeTile,
     );
   }
 
@@ -351,29 +338,6 @@ class _HomePageState extends State<HomePage> {
                 icon: const Icon(Icons.link),
                 label: const Text('Link'),
                 onPressed: () => Navigator.pop(ctx, MediaPickSetting.Link),
-              )
-            ],
-          ),
-        ),
-      );
-
-  // ignore: unused_element
-  Future<MediaPickSetting?> _selectCameraPickSetting(BuildContext context) => showDialog<MediaPickSetting>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          contentPadding: EdgeInsets.zero,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.camera),
-                label: const Text('Capture a photo'),
-                onPressed: () => Navigator.pop(ctx, MediaPickSetting.Camera),
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.video_call),
-                label: const Text('Capture a video'),
-                onPressed: () => Navigator.pop(ctx, MediaPickSetting.Video),
               )
             ],
           ),
