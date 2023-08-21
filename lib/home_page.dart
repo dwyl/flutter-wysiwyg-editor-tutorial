@@ -41,22 +41,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadFromAssets();
+    _initializeText();
   }
 
-  Future<void> _loadFromAssets() async {
-    try {
-      final result = await rootBundle.loadString('assets/sample_data.json');
-      final doc = Document.fromJson(jsonDecode(result));
+  Future<void> _initializeText() async {
+    final doc = Document()..insert(0, 'Just a friendly empty text :)');
       setState(() {
         _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
       });
-    } catch (error) {
-      final doc = Document()..insert(0, 'Empty asset');
-      setState(() {
-        _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
-      });
-    }
   }
 
   @override
@@ -208,7 +200,7 @@ class _HomePageState extends State<HomePage> {
           embedBuilders: [...defaultEmbedBuildersWeb, TimeStampEmbedBuilderWidget()]);
     }
 
-    double toolbarIconSize = 18;
+    const toolbarIconSize = 18.0;
     final embedButtons = FlutterQuillEmbeds.buttons(
       // provide a callback to enable picking images from device.
       // if omit, "image" button only allows adding images from url.
