@@ -54,6 +54,22 @@ This quick demo is aimed at people in the @dwyl team
 or anyone who is interested in learning 
 more about building a `WYSIWYG` editor.
 
+> [!WARNING]
+> 
+> Do take note that this guide is meant 
+> **only for `mobile devices` and `web apps`**.
+> It is **not** tailored to Flutter desktop applications.
+> We'll be focusing on the web and mobile devices
+> because it's more important *to us* 
+> and because it's simpler to understand.
+> Some implementation details will need to be changed
+> if you want this to work on desktop applications.
+> 
+> If you need this,
+> please check the
+> [example app from `flutter-quill`](https://github.com/singerdmx/flutter-quill/tree/master/example),
+> as they address this distinction.
+
 # _How_? 👩‍💻
 
 ## Prerequisites? 📝
