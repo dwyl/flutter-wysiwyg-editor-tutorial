@@ -20,6 +20,7 @@
 - [_How_? 👩‍💻](#how-)
   - [Prerequisites? 📝](#prerequisites-)
   - [0. Project setup](#0-project-setup)
+    - [\*\*Make sure your `flutter` is up-to-date!](#make-sure-your-flutter-is-up-to-date)
 
 
 # Why? 🤷‍
@@ -88,3 +89,29 @@ this output on the terminal.
 
 This means everything is correctly set up!
 We are ready to start implementing!
+
+### **Make sure your `flutter` is up-to-date!
+
+Make sure you are running the latest version of `Flutter`!
+You can make a run-through of the versions by running:
+
+```
+flutter doctor
+```
+
+To make sure you're running the latest version,
+run `flutter upgrade`.
+
+This is needed when running the app against physical devices.
+A *minimum `SDK` version* is needed to run the project with its dependencies
+so you don't encounter this error:
+
+```
+uses-sdk:minSdkVersion XX cannot be smaller than version XX declared in library
+```
+
+If you are *still* encountering this problem on your physical device,
+please follow the instructions in https://stackoverflow.com/questions/52060516/flutter-how-to-change-android-minsdkversion-in-flutter-project.
+You will essentially need to change the `minSdkVersion` parameter
+inside `android/app/build.gradle` file 
+and bump it to a higher version (it is suggested in the error output).

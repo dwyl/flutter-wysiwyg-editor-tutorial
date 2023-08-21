@@ -14,7 +14,6 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'timestamp_embed_widget.dart';
 import 'web_embeds.dart';
 
 enum _SelectionType {
@@ -70,7 +69,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                content: Text(_controller!.document.toPlainText([...FlutterQuillEmbeds.builders(), TimeStampEmbedBuilderWidget()])),
+                content: Text(_controller!.document.toPlainText([...FlutterQuillEmbeds.builders()])),
               ),
             ),
             icon: const Icon(Icons.text_fields_rounded),
@@ -168,7 +167,7 @@ class _HomePageState extends State<HomePage> {
           fontFeatures: [FontFeature.superscripts()],
         ),
       ),
-      embedBuilders: [...FlutterQuillEmbeds.builders(), TimeStampEmbedBuilderWidget()],
+      embedBuilders: [...FlutterQuillEmbeds.builders()],
     );
     if (kIsWeb) {
       quillEditor = QuillEditor(
@@ -197,7 +196,7 @@ class _HomePageState extends State<HomePage> {
                 null),
             sizeSmall: const TextStyle(fontSize: 9),
           ),
-          embedBuilders: [...defaultEmbedBuildersWeb, TimeStampEmbedBuilderWidget()]);
+          embedBuilders: [...defaultEmbedBuildersWeb]);
     }
 
     const toolbarIconSize = 18.0;
@@ -205,7 +204,7 @@ class _HomePageState extends State<HomePage> {
       // provide a callback to enable picking images from device.
       // if omit, "image" button only allows adding images from url.
       // same goes for videos.
-      onImagePickCallback: _onImagePickCallback,
+      // onImagePickCallback: _onImagePickCallback,
       // uncomment to provide a custom "pick from" dialog.
       // mediaPickSettingSelector: _selectMediaPickSetting,
       // uncomment to provide a custom "pick from" dialog.
