@@ -142,7 +142,6 @@ class _HomePageState extends State<HomePage> {
       enableSelectionToolbar: isMobile(),
       expands: false,
       padding: EdgeInsets.zero,
-      onImagePaste: _onImagePaste,
       onTapUp: (details, p1) {
         return _onTripleClickSelection();
       },
@@ -319,35 +318,5 @@ class _HomePageState extends State<HomePage> {
     final file = File(fileName);
 
     return onImagePickCallback(file);
-  }
-
-  // ignore: unused_element
-  Future<MediaPickSetting?> _selectMediaPickSetting(BuildContext context) => showDialog<MediaPickSetting>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          contentPadding: EdgeInsets.zero,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.collections),
-                label: const Text('Gallery'),
-                onPressed: () => Navigator.pop(ctx, MediaPickSetting.Gallery),
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.link),
-                label: const Text('Link'),
-                onPressed: () => Navigator.pop(ctx, MediaPickSetting.Link),
-              )
-            ],
-          ),
-        ),
-      );
-
-  Future<String> _onImagePaste(Uint8List imageBytes) async {
-    // Saves the image to applications directory
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final file = await File('${appDocDir.path}/${basename('${DateTime.now().millisecondsSinceEpoch}.png')}').writeAsBytes(imageBytes, flush: true);
-    return file.path.toString();
   }
 }
