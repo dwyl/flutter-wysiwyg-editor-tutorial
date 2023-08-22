@@ -296,9 +296,9 @@ class _HomePageState extends State<HomePage> {
       final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
       return copiedFile.path.toString();
     } else {
+      // TODO: This will fail on web
+      // Might have to upload to S3 or embed a canvas like https://stackoverflow.com/questions/71798042/flutter-how-do-i-write-a-file-to-local-directory-with-path-provider.
 
-
-      // This will fail on web
       return file.path;
     }
   }
