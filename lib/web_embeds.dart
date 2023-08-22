@@ -3,10 +3,27 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:universal_html/html.dart' as html;
 
-import 'dart:ui_web' as ui_web; 
+import 'mobile_platform_registry.dart' if (dart.library.html) 'web_platform_registry.dart' as ui_instance;
+
+/// https://github.com/flutter/flutter/issues/41563#issuecomment-547923478
+///
+/// https://stackoverflow.com/questions/67732006/condition-import-of-dartio-or-darthtml
+class PlatformViewRegistryFix {
+  void registerViewFactory(String imageURL, dynamic cbFnc) {
+    if (kIsWeb) {
+      ui_instance.PlatformViewRegistry.registerViewFactory(
+        imageURL,
+        cbFnc,
+      );
+    }
+  }
+}
+
+class ImageUniversalUI {
+  PlatformViewRegistryFix platformViewRegistry = PlatformViewRegistryFix();
+}
 
 class ImageEmbedBuilderWeb extends EmbedBuilder {
   @override
@@ -27,7 +44,7 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
       return const SizedBox();
     }
     final size = MediaQuery.of(context).size;
-    ui_web.platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
+    ImageUniversalUI().platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
       return html.ImageElement()
         ..src = imageUrl
         ..style.height = 'auto'
