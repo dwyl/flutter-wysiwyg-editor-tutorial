@@ -40,6 +40,7 @@ dependencies:
   file_picker: ^5.3.3
   filesystem_picker: ^3.1.0
   universal_io: ^2.2.2
+  responsive_framework: ^1.1.0
 
 dev_dependencies:
   flutter_test:

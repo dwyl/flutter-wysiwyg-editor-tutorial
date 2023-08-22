@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:universal_html/html.dart' as html;
 
-import 'responsive_widget.dart';
+import 'dart:ui_web' as ui_web; 
 
 class ImageEmbedBuilderWeb extends EmbedBuilder {
   @override
@@ -24,12 +27,17 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
       return const SizedBox();
     }
     final size = MediaQuery.of(context).size;
-
+    ui_web.platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
+      return html.ImageElement()
+        ..src = imageUrl
+        ..style.height = 'auto'
+        ..style.width = 'auto';
+    });
     return Padding(
       padding: EdgeInsets.only(
-        right: ResponsiveWidget.isMediumScreen(context)
+        right: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
             ? size.width * 0.5
-            : (ResponsiveWidget.isLargeScreen(context))
+            : (ResponsiveBreakpoints.of(context).equals('4K'))
                 ? size.width * 0.75
                 : size.width * 0.2,
       ),
@@ -43,39 +51,6 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
   }
 }
 
-class VideoEmbedBuilderWeb extends EmbedBuilder {
-  @override
-  String get key => BlockEmbed.videoType;
-
-  @override
-  Widget build(
-    BuildContext context,
-    QuillController controller,
-    Embed node,
-    bool readOnly,
-    bool inline,
-    TextStyle textStyle,
-  ) {
-    var videoUrl = node.value.data;
-    if (videoUrl.contains('youtube.com') || videoUrl.contains('youtu.be')) {
-      final youtubeID = YoutubePlayer.convertUrlToId(videoUrl);
-      if (youtubeID != null) {
-        videoUrl = 'https://www.youtube.com/embed/$youtubeID';
-      }
-    }
-
-
-
-    return SizedBox(
-      height: 500,
-      child: HtmlElementView(
-        viewType: videoUrl,
-      ),
-    );
-  }
-}
-
 List<EmbedBuilder> get defaultEmbedBuildersWeb => [
       ImageEmbedBuilderWeb(),
-      VideoEmbedBuilderWeb(),
     ];

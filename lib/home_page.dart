@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:filesystem_picker/filesystem_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:mime/mime.dart';
 
 import 'web_embeds.dart';
 
@@ -24,6 +20,8 @@ enum _SelectionType {
 }
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -74,7 +72,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             icon: const Icon(Icons.text_fields_rounded),
-          )
+          ),
         ],
       ),
       body: _buildWelcomeEditor(context),
@@ -148,15 +146,16 @@ class _HomePageState extends State<HomePage> {
       },
       customStyles: DefaultStyles(
         h1: DefaultTextBlockStyle(
-            const TextStyle(
-              fontSize: 32,
-              color: Colors.black,
-              height: 1.15,
-              fontWeight: FontWeight.w300,
-            ),
-            const VerticalSpacing(16, 0),
-            const VerticalSpacing(0, 0),
-            null),
+          const TextStyle(
+            fontSize: 32,
+            color: Colors.black,
+            height: 1.15,
+            fontWeight: FontWeight.w300,
+          ),
+          const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
         sizeSmall: const TextStyle(fontSize: 9),
         subscript: const TextStyle(
           fontFamily: 'SF-UI-Display',
@@ -171,32 +170,34 @@ class _HomePageState extends State<HomePage> {
     );
     if (kIsWeb) {
       quillEditor = QuillEditor(
-          controller: _controller!,
-          scrollController: ScrollController(),
-          scrollable: true,
-          focusNode: _focusNode,
-          autoFocus: false,
-          readOnly: false,
-          placeholder: 'Add content',
-          expands: false,
-          padding: EdgeInsets.zero,
-          onTapUp: (details, p1) {
-            return _onTripleClickSelection();
-          },
-          customStyles: DefaultStyles(
-            h1: DefaultTextBlockStyle(
-                const TextStyle(
-                  fontSize: 32,
-                  color: Colors.black,
-                  height: 1.15,
-                  fontWeight: FontWeight.w300,
-                ),
-                const VerticalSpacing(16, 0),
-                const VerticalSpacing(0, 0),
-                null),
-            sizeSmall: const TextStyle(fontSize: 9),
+        controller: _controller!,
+        scrollController: ScrollController(),
+        scrollable: true,
+        focusNode: _focusNode,
+        autoFocus: false,
+        readOnly: false,
+        placeholder: 'Add content',
+        expands: false,
+        padding: EdgeInsets.zero,
+        onTapUp: (details, p1) {
+          return _onTripleClickSelection();
+        },
+        customStyles: DefaultStyles(
+          h1: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 32,
+              color: Colors.black,
+              height: 1.15,
+              fontWeight: FontWeight.w300,
+            ),
+            const VerticalSpacing(16, 0),
+            const VerticalSpacing(0, 0),
+            null,
           ),
-          embedBuilders: [...defaultEmbedBuildersWeb]);
+          sizeSmall: const TextStyle(fontSize: 9),
+        ),
+        embedBuilders: [...defaultEmbedBuildersWeb],
+      );
     }
 
     const toolbarIconSize = 18.0;
@@ -274,7 +275,7 @@ class _HomePageState extends State<HomePage> {
               child: quillEditor,
             ),
           ),
-          Container(child: toolbar)
+          Container(child: toolbar),
         ],
       ),
     );
@@ -284,6 +285,7 @@ class _HomePageState extends State<HomePage> {
   // You can also upload the picked image to any server (eg : AWS s3
   // or Firebase) and then return the uploaded image URL.
   Future<String> _onImagePickCallback(File file) async {
+    //return "https://d3vhc53cl8e8km.cloudfront.net/artists/220/e16cb080-cb30-11ec-b991-0ee6b8365494.jpg";
     if (!kIsWeb) {
       // Copies the picked file from temporary cache to applications directory
       final appDocDir = await getApplicationDocumentsDirectory();
