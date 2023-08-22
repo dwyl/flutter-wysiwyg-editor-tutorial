@@ -13,6 +13,7 @@ import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:mime/mime.dart';
 
 import 'web_embeds.dart';
 
@@ -45,9 +46,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _initializeText() async {
     final doc = Document()..insert(0, 'Just a friendly empty text :)');
-      setState(() {
-        _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
-      });
+    setState(() {
+      _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
+    });
   }
 
   @override
@@ -204,11 +205,12 @@ class _HomePageState extends State<HomePage> {
       showFormulaButton: false,
       showVideoButton: false,
       showImageButton: true,
-      
+
       // provide a callback to enable picking images from device.
       // if omit, "image" button only allows adding images from url.
       // same goes for videos.
       onImagePickCallback: _onImagePickCallback,
+      webImagePickImpl: _webImagePickImpl,
       mediaPickSettingSelector: (context) {
         return Future.value(MediaPickSetting.Gallery);
       },
@@ -217,7 +219,7 @@ class _HomePageState extends State<HomePage> {
       // uncomment to provide a custom "pick from" dialog.
       // cameraPickSettingSelector: _selectCameraPickSetting,
     );
-    var toolbar = QuillToolbar(
+    final toolbar = QuillToolbar(
       afterButtonPressed: _focusNode.requestFocus,
       children: [
         HistoryButton(
@@ -256,22 +258,9 @@ class _HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
-
         for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
       ],
     );
-
-    if (kIsWeb) {
-      toolbar = QuillToolbar.basic(
-        controller: _controller!,
-        embedButtons: FlutterQuillEmbeds.buttons(
-          onImagePickCallback: _onImagePickCallback,
-          webImagePickImpl: _webImagePickImpl,
-        ),
-        showAlignmentButtons: true,
-        afterButtonPressed: _focusNode.requestFocus,
-      );
-    }
 
     return SafeArea(
       child: Column(
@@ -301,22 +290,45 @@ class _HomePageState extends State<HomePage> {
   // You can also upload the picked image to any server (eg : AWS s3
   // or Firebase) and then return the uploaded image URL.
   Future<String> _onImagePickCallback(File file) async {
-    // Copies the picked file from temporary cache to applications directory
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
-    return copiedFile.path.toString();
+    if (!kIsWeb) {
+      // Copies the picked file from temporary cache to applications directory
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+      return copiedFile.path.toString();
+    } else {
+
+
+      // This will fail on web
+      return file.path;
+    }
   }
 
   Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result == null) {
+    // Lets the user pick one file; files with any file extension can be selected
+    final result = await ImageFilePicker().pickImage();
+
+    // The result will be null, if the user aborted the dialog
+    if (result == null || result.files.isEmpty) {
       return null;
     }
 
-    // Take first, because we don't allow picking multiple files.
-    final fileName = result.files.first.name;
-    final file = File(fileName);
+    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
+    final platformFile = result.files.first;
+    final bytes = platformFile.bytes;
+
+    if (bytes == null) {
+      return null;
+    }
+
+    final file = File.fromRawPath(bytes);
 
     return onImagePickCallback(file);
   }
 }
+
+// coverage:ignore-start
+/// Image file picker wrapper class
+class ImageFilePicker {
+  Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
+}
+// coverage:ignore-end
