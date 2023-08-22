@@ -5,11 +5,11 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:universal_html/html.dart' as html;
 
+// Conditionally importing the PlatformViewRegistry class according to the platform
 import 'mobile_platform_registry.dart' if (dart.library.html) 'web_platform_registry.dart' as ui_instance;
 
-/// https://github.com/flutter/flutter/issues/41563#issuecomment-547923478
-///
-/// https://stackoverflow.com/questions/67732006/condition-import-of-dartio-or-darthtml
+/// Class used to conditionally register the view factory.
+/// For more information, check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478.
 class PlatformViewRegistryFix {
   void registerViewFactory(String imageURL, dynamic cbFnc) {
     if (kIsWeb) {
@@ -21,10 +21,12 @@ class PlatformViewRegistryFix {
   }
 }
 
+/// Class that conditionally registers the `platformViewRegistry`.
 class ImageUniversalUI {
   PlatformViewRegistryFix platformViewRegistry = PlatformViewRegistryFix();
 }
 
+/// Custom embed for images to work on the web.
 class ImageEmbedBuilderWeb extends EmbedBuilder {
   @override
   String get key => BlockEmbed.imageType;
@@ -44,12 +46,16 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
       return const SizedBox();
     }
     final size = MediaQuery.of(context).size;
+
+    // This is needed for images to be correctly embedded on the web.
     ImageUniversalUI().platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
       return html.ImageElement()
         ..src = imageUrl
         ..style.height = 'auto'
         ..style.width = 'auto';
     });
+
+    // Rendering responsive image
     return Padding(
       padding: EdgeInsets.only(
         right: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
@@ -68,6 +74,7 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
   }
 }
 
+/// List of default web embed builders.
 List<EmbedBuilder> get defaultEmbedBuildersWeb => [
       ImageEmbedBuilderWeb(),
     ];

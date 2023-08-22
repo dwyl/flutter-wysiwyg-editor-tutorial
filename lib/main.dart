@@ -5,17 +5,19 @@ import 'package:responsive_framework/responsive_framework.dart';
 // coverage:ignore-start
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(const App());
 }
 // coverage:ignore-end
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Entry gateway to the application.
+/// Defining the MaterialApp attributes and Responsive Framework breakpoints.
+class App extends StatelessWidget {
+  const App({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Editor Demo',
       builder: (context, child) => ResponsiveBreakpoints.builder(
         child: child!,
         breakpoints: [

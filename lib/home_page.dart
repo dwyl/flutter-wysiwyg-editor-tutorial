@@ -11,30 +11,33 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'web_embeds.dart';
+import 'web_embeds/web_embeds.dart';
 
+/// Types of selection that person can make when triple clicking
 enum _SelectionType {
   none,
   word,
-  // line,
 }
 
+/// Home page with the `flutter-quill` editor
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
+
+  /// `flutter-quill` editor controller
   QuillController? _controller;
+
+  /// Focus node used to obtain keyboard focus and events
   final FocusNode _focusNode = FocusNode();
+
+  /// Selection types for triple clicking
   _SelectionType _selectionType = _SelectionType.none;
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _HomePageState extends State<HomePage> {
     _initializeText();
   }
 
+  /// Initializing the [Delta](https://quilljs.com/docs/delta/) document with sample text.
   Future<void> _initializeText() async {
     final doc = Document()..insert(0, 'Just a friendly empty text :)');
     setState(() {
@@ -51,10 +55,13 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+
+    /// Loading widget if controller's not loaded
     if (_controller == null) {
       return const Scaffold(body: Center(child: Text('Loading...')));
     }
 
+    /// Returning scaffold with editor as body
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -63,48 +70,29 @@ class _HomePageState extends State<HomePage> {
         title: const Text(
           'Flutter Quill',
         ),
-        actions: [
-          IconButton(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                content: Text(_controller!.document.toPlainText([...FlutterQuillEmbeds.builders()])),
-              ),
-            ),
-            icon: const Icon(Icons.text_fields_rounded),
-          ),
-        ],
       ),
-      body: _buildWelcomeEditor(context),
+      body: _buildEditor(context),
     );
   }
 
+  /// Callback called whenever the person taps on the text.
+  /// It will select nothing, then the word if another tap is detected
+  /// and then the whole text if another tap is detected (triple).
   bool _onTripleClickSelection() {
     final controller = _controller!;
 
-    // If you want to select all text after paragraph, uncomment this line
-    // if (_selectionType == _SelectionType.line) {
-    //   final selection = TextSelection(
-    //     baseOffset: 0,
-    //     extentOffset: controller.document.length,
-    //   );
-
-    //   controller.updateSelection(selection, ChangeSource.REMOTE);
-
-    //   _selectionType = _SelectionType.none;
-
-    //   return true;
-    // }
-
+    // If nothing is selected, selection type is `none`
     if (controller.selection.isCollapsed) {
       _selectionType = _SelectionType.none;
     }
 
+    // If nothing is selected, selection type becomes `word
     if (_selectionType == _SelectionType.none) {
       _selectionType = _SelectionType.word;
       return false;
     }
 
+    // If the word is selected, select all text
     if (_selectionType == _SelectionType.word) {
       final child = controller.document.queryChild(
         controller.selection.baseOffset,
@@ -117,9 +105,8 @@ class _HomePageState extends State<HomePage> {
         extentOffset: offset + length,
       );
 
+      // Select all text and make next selection to `none`
       controller.updateSelection(selection, ChangeSource.REMOTE);
-
-      // _selectionType = _SelectionType.line;
 
       _selectionType = _SelectionType.none;
 
@@ -129,7 +116,10 @@ class _HomePageState extends State<HomePage> {
     return false;
   }
 
-  Widget _buildWelcomeEditor(BuildContext context) {
+  /// Build the `flutter-quill` editor to be shown on screen.
+  Widget _buildEditor(BuildContext context) {
+
+    // Default editor (for mobile devices)
     Widget quillEditor = QuillEditor(
       controller: _controller!,
       scrollController: ScrollController(),
@@ -137,7 +127,7 @@ class _HomePageState extends State<HomePage> {
       focusNode: _focusNode,
       autoFocus: false,
       readOnly: false,
-      placeholder: 'Add content',
+      placeholder: 'Write what\'s on your mind.',
       enableSelectionToolbar: isMobile(),
       expands: false,
       padding: EdgeInsets.zero,
@@ -168,6 +158,8 @@ class _HomePageState extends State<HomePage> {
       ),
       embedBuilders: [...FlutterQuillEmbeds.builders()],
     );
+
+    // Alternatively, the web editor version is shown  (with the web embeds)
     if (kIsWeb) {
       quillEditor = QuillEditor(
         controller: _controller!,
@@ -200,26 +192,29 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+    // Toolbar definitions
     const toolbarIconSize = 18.0;
     final embedButtons = FlutterQuillEmbeds.buttons(
+
+      // Showing only necessary default buttons
       showCameraButton: false,
       showFormulaButton: false,
       showVideoButton: false,
       showImageButton: true,
 
-      // provide a callback to enable picking images from device.
-      // if omit, "image" button only allows adding images from url.
-      // same goes for videos.
+      // `onImagePickCallback` is called after image (from any platform) is picked
       onImagePickCallback: _onImagePickCallback,
+
+      // `webImagePickImpl` is called after image (from web) is picked and then `onImagePickCallback` is called
       webImagePickImpl: _webImagePickImpl,
+
+      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
       mediaPickSettingSelector: (context) {
         return Future.value(MediaPickSetting.Gallery);
       },
-      // uncomment to provide a custom "pick from" dialog.
-      // mediaPickSettingSelector: _selectMediaPickSetting,
-      // uncomment to provide a custom "pick from" dialog.
-      // cameraPickSettingSelector: _selectCameraPickSetting,
     );
+
+    // Instantiating the toolbar
     final toolbar = QuillToolbar(
       afterButtonPressed: _focusNode.requestFocus,
       children: [
@@ -263,6 +258,8 @@ class _HomePageState extends State<HomePage> {
       ],
     );
 
+
+    // Rendering the final editor + toolbar
     return SafeArea(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -299,6 +296,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  /// Callback that is called after an image is picked whilst on the web platform.
   Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
     // Lets the user pick one file; files with any file extension can be selected
     final result = await ImageFilePicker().pickImage();
