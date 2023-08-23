@@ -282,7 +282,7 @@ class HomePageState extends State<HomePage> {
   // You can also upload the picked image to any server (eg : AWS s3
   // or Firebase) and then return the uploaded image URL.
   Future<String> _onImagePickCallback(File file) async {
-    //return "https://d3vhc53cl8e8km.cloudfront.net/artists/220/e16cb080-cb30-11ec-b991-0ee6b8365494.jpg";
+    //return "https://pbs.twimg.com/media/EzmJ_YBVgAEnoF2?format=jpg&name=large";
     if (!kIsWeb) {
       // Copies the picked file from temporary cache to applications directory
       final appDocDir = await getApplicationDocumentsDirectory();
@@ -315,6 +315,10 @@ class HomePageState extends State<HomePage> {
     }
 
     final file = File.fromRawPath(bytes);
+    
+    // TODO maybe I don't need to call `onImagePickCallback` here.
+    // Recheck the flow on mobile devices and then on the web, do not call `onImagePickCallback` here.
+    // Let's try to use base64 or something
 
     return onImagePickCallback(file);
   }
