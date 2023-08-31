@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:app/home_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -11,8 +14,8 @@ import 'mobile_platform_registry.dart' if (dart.library.html) 'web_platform_regi
 /// Class used to conditionally register the view factory.
 /// For more information, check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478.
 class PlatformViewRegistryFix {
-  void registerViewFactory(String imageURL, dynamic cbFnc) {
-    if (kIsWeb) {
+  void registerViewFactory(PlatformService platformService, imageURL, dynamic cbFnc) {
+    if (platformService.isWebPlatform()) {
       ui_instance.PlatformViewRegistry.registerViewFactory(
         imageURL,
         cbFnc,
@@ -48,7 +51,7 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
     final size = MediaQuery.of(context).size;
 
     // This is needed for images to be correctly embedded on the web.
-    ImageUniversalUI().platformViewRegistry.registerViewFactory(imageUrl, (viewId) {
+    ImageUniversalUI().platformViewRegistry.registerViewFactory(PlatformService(), imageUrl, (viewId) {
       return html.ImageElement()
         ..src = imageUrl
         ..style.height = 'auto'

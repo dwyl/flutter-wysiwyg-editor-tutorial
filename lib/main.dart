@@ -5,14 +5,18 @@ import 'package:responsive_framework/responsive_framework.dart';
 // coverage:ignore-start
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const App());
+  runApp(App(
+    platformService: PlatformService(),
+  ));
 }
 // coverage:ignore-end
 
 /// Entry gateway to the application.
 /// Defining the MaterialApp attributes and Responsive Framework breakpoints.
 class App extends StatelessWidget {
-  const App({super.key});
+  const App({super.key, required this.platformService});
+
+  final PlatformService platformService;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +35,7 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: HomePage(platformService: platformService),
     );
   }
 }

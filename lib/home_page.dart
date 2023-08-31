@@ -13,6 +13,8 @@ import 'package:path_provider/path_provider.dart';
 
 import 'web_embeds/web_embeds.dart';
 
+const quillEditorKey = Key('quillEditorKey');
+
 /// Types of selection that person can make when triple clicking
 enum _SelectionType {
   none,
@@ -21,14 +23,17 @@ enum _SelectionType {
 
 /// Home page with the `flutter-quill` editor
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.platformService, super.key,
+  });
+
+  final PlatformService platformService;
 
   @override
   HomePageState createState() => HomePageState();
 }
 
 class HomePageState extends State<HomePage> {
-
   /// `flutter-quill` editor controller
   QuillController? _controller;
 
@@ -38,7 +43,6 @@ class HomePageState extends State<HomePage> {
   /// Selection types for triple clicking
   _SelectionType _selectionType = _SelectionType.none;
 
-
   @override
   void initState() {
     super.initState();
@@ -47,7 +51,8 @@ class HomePageState extends State<HomePage> {
 
   /// Initializing the [Delta](https://quilljs.com/docs/delta/) document with sample text.
   Future<void> _initializeText() async {
-    final doc = Document()..insert(0, 'Just a friendly empty text :)');
+    // final doc = Document()..insert(0, 'Just a friendly empty text :)');
+    final doc = Document();
     setState(() {
       _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
     });
@@ -55,7 +60,6 @@ class HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     /// Loading widget if controller's not loaded
     if (_controller == null) {
       return const Scaffold(body: Center(child: Text('Loading...')));
@@ -118,7 +122,6 @@ class HomePageState extends State<HomePage> {
 
   /// Build the `flutter-quill` editor to be shown on screen.
   Widget _buildEditor(BuildContext context) {
-
     // Default editor (for mobile devices)
     Widget quillEditor = QuillEditor(
       controller: _controller!,
@@ -160,7 +163,7 @@ class HomePageState extends State<HomePage> {
     );
 
     // Alternatively, the web editor version is shown  (with the web embeds)
-    if (kIsWeb) {
+    if (widget.platformService.isWebPlatform()) {
       quillEditor = QuillEditor(
         controller: _controller!,
         scrollController: ScrollController(),
@@ -195,7 +198,6 @@ class HomePageState extends State<HomePage> {
     // Toolbar definitions
     const toolbarIconSize = 18.0;
     final embedButtons = FlutterQuillEmbeds.buttons(
-
       // Showing only necessary default buttons
       showCameraButton: false,
       showFormulaButton: false,
@@ -258,7 +260,6 @@ class HomePageState extends State<HomePage> {
       ],
     );
 
-
     // Rendering the final editor + toolbar
     return SafeArea(
       child: Column(
@@ -267,6 +268,7 @@ class HomePageState extends State<HomePage> {
           Expanded(
             flex: 15,
             child: Container(
+              key: quillEditorKey,
               color: Colors.white,
               padding: const EdgeInsets.only(left: 16, right: 16),
               child: quillEditor,
@@ -283,7 +285,7 @@ class HomePageState extends State<HomePage> {
   // or Firebase) and then return the uploaded image URL.
   Future<String> _onImagePickCallback(File file) async {
     //return "https://pbs.twimg.com/media/EzmJ_YBVgAEnoF2?format=jpg&name=large";
-    if (!kIsWeb) {
+    if (!widget.platformService.isWebPlatform()) {
       // Copies the picked file from temporary cache to applications directory
       final appDocDir = await getApplicationDocumentsDirectory();
       final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
@@ -315,7 +317,7 @@ class HomePageState extends State<HomePage> {
     }
 
     final file = File.fromRawPath(bytes);
-    
+
     // TODO maybe I don't need to call `onImagePickCallback` here.
     // Recheck the flow on mobile devices and then on the web, do not call `onImagePickCallback` here.
     // Let's try to use base64 or something
@@ -328,5 +330,12 @@ class HomePageState extends State<HomePage> {
 /// Image file picker wrapper class
 class ImageFilePicker {
   Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
+}
+
+/// Platform service class that tells if the platform is web-based or not
+class PlatformService {
+  bool isWebPlatform() {
+    return kIsWeb;
+  }
 }
 // coverage:ignore-end
