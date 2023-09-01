@@ -7,14 +7,14 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(App(
     platformService: PlatformService(),
-  ));
+  ),);
 }
 // coverage:ignore-end
 
 /// Entry gateway to the application.
 /// Defining the MaterialApp attributes and Responsive Framework breakpoints.
 class App extends StatelessWidget {
-  const App({super.key, required this.platformService});
+  const App({required this.platformService, super.key});
 
   final PlatformService platformService;
 

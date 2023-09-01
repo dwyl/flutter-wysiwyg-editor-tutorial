@@ -28,7 +28,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(App(
       platformService: platformServiceMock,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     // Expect to find the normal page setup
@@ -51,7 +51,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(App(
       platformService: platformServiceMock,
-    ));
+    ),);
     await tester.pumpAndSettle();
 
     // Expect to find the normal page setup
