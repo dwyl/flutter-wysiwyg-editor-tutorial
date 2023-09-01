@@ -8,6 +8,7 @@
 import 'package:app/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill_test.dart';
 
@@ -26,9 +27,11 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(App(
-      platformService: platformServiceMock,
-    ),);
+    await tester.pumpWidget(
+      App(
+        platformService: platformServiceMock,
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Expect to find the normal page setup
@@ -40,6 +43,35 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('Select image', (WidgetTester tester) async {
+    final platformServiceMock = MockPlatformService();
+
+    // Platform is mobile
+    when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
+
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(
+      App(
+        platformService: platformServiceMock,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Expect to find the normal page setup
+    expect(find.text('Flutter Quill'), findsOneWidget);
+
+    // Enter 'hi' into Quill Editor.
+    await tester.tap(find.byType(QuillEditor));
+    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
+    await tester.pumpAndSettle();
+
+    final imageButton = find.byType(ImageButton);
+    await tester.tap(imageButton);
+    await tester.pumpAndSettle();
+
+    //TODO add image picker
+  });
+
   testWidgets('Normal setup (web version)', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 600);
     tester.view.devicePixelRatio = 1.0;
@@ -49,9 +81,11 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(App(
-      platformService: platformServiceMock,
-    ),);
+    await tester.pumpWidget(
+      App(
+        platformService: platformServiceMock,
+      ),
+    );
     await tester.pumpAndSettle();
 
     // Expect to find the normal page setup
