@@ -16,6 +16,9 @@ import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
+import 'package:integration_test/integration_test.dart';
+
+
 // importing mocks
 import 'widget_test.mocks.dart';
 
