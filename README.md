@@ -27,6 +27,8 @@
   - [4. Adding the `Quill` editor](#4-adding-the-quill-editor)
     - [4.1 Instantiating `QuillEditor`](#41-instantiating-quilleditor)
     - [4.2 Defining triple click selection behaviour](#42-defining-triple-click-selection-behaviour)
+    - [4.3 Reassigning `quillEditor` on web platforms](#43-reassigning-quilleditor-on-web-platforms)
+      - [4.3.1 Creating web embeds](#431-creating-web-embeds)
 
 
 # Why? 🤷‍
@@ -589,3 +591,70 @@ and use it to set the text selection to the whole text.
 We then set the `_selectionType` back to `none`,
 so on the next click,
 the selection loops back to nothing.
+
+
+### 4.3 Reassigning `quillEditor` on web platforms
+
+In order for our editor to work on the web,
+we need to make a few changes to the `quillEditor` variable.
+Because of this, 
+we are going to reassign a new `QuillEditor` instance
+to it on web platforms.
+
+Go back to `_buildEditor()` and continue where we left off.
+Add the following line under the `quillEditor` variable instantiation.
+
+```dart
+    if (widget.platformService.isWebPlatform()) {
+      quillEditor = QuillEditor(
+        controller: _controller!,
+        scrollController: ScrollController(),
+        scrollable: true,
+        focusNode: _focusNode,
+        autoFocus: false,
+        readOnly: false,
+        placeholder: 'Add content',
+        expands: false,
+        padding: EdgeInsets.zero,
+        onTapUp: (details, p1) {
+          return _onTripleClickSelection();
+        },
+        customStyles: DefaultStyles(
+          h1: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 32,
+              color: Colors.black,
+              height: 1.15,
+              fontWeight: FontWeight.w300,
+            ),
+            const VerticalSpacing(16, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          sizeSmall: const TextStyle(fontSize: 9),
+        ),
+        embedBuilders: [...defaultEmbedBuildersWeb],
+      );
+    }
+```
+
+We are using the `platformService` we mentioned earlier
+to check if the platform is **web** or not.
+
+As you can see, the parameters are quite similar
+to the previous assignment (meant only for mobile devices),
+except the `embedBuilders` parameter,
+which uses the `defaultEmbedBuildersWeb`.
+This variable is not yet defined, so we shall do this right now!
+
+
+#### 4.3.1 Creating web embeds
+
+As noted in `flutter-quill`'s documentation
+(https://github.com/singerdmx/flutter-quill/tree/master#web),
+we need to define web embeds so Quill Editor works properly.
+
+
+
+- toolbar next
+
