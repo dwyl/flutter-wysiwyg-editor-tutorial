@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
@@ -330,12 +330,5 @@ class HomePageState extends State<HomePage> {
 /// Image file picker wrapper class
 class ImageFilePicker {
   Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
-}
-
-/// Platform service class that tells if the platform is web-based or not
-class PlatformService {
-  bool isWebPlatform() {
-    return kIsWeb;
-  }
 }
 // coverage:ignore-end

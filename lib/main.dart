@@ -1,4 +1,5 @@
 import 'package:app/home_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
@@ -39,3 +40,12 @@ class App extends StatelessWidget {
     );
   }
 }
+
+// coverage:ignore-start
+/// Platform service class that tells if the platform is web-based or not
+class PlatformService {
+  bool isWebPlatform() {
+    return kIsWeb;
+  }
+}
+// coverage:ignore-end

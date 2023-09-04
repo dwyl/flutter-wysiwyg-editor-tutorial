@@ -21,6 +21,9 @@
   - [Prerequisites? 📝](#prerequisites-)
   - [0. Project setup](#0-project-setup)
     - [\*\*Make sure your `flutter` is up-to-date!](#make-sure-your-flutter-is-up-to-date)
+  - [1. Installing all the needed dependencies](#1-installing-all-the-needed-dependencies)
+  - [2. Setting up the responsive framework](#2-setting-up-the-responsive-framework)
+  - [3. Create `HomePage` with basic editor](#3-create-homepage-with-basic-editor)
 
 
 # Why? 🤷‍
@@ -131,3 +134,134 @@ please follow the instructions in https://stackoverflow.com/questions/52060516/f
 You will essentially need to change the `minSdkVersion` parameter
 inside `android/app/build.gradle` file 
 and bump it to a higher version (it is suggested in the error output).
+
+
+## 1. Installing all the needed dependencies
+
+To implement our application that runs `flutter_quill`, 
+we are going to need install some dependencies 
+that we're going to be using.
+
+- [`flutter_quill`](https://github.com/singerdmx/flutter-quill), 
+the main package with the text editor
+with Delta capabilities.
+- [`flutter_quill_extensions`](https://pub.dev/packages/flutter_quill_extensions), 
+needed to use image and video embeds into the editor,.
+- [`file_picker`](https://pub.dev/packages/file_picker),
+so we're able to import files.
+- [`universal_io`](https://pub.dev/packages/universal_io),
+an extended version of `dart.io` that works on all platforms.
+- [`universal_html`](https://pub.dev/packages/universal_html),
+extended version of `dart.html` that is cross-platform.
+- [`responsive_framework`](https://pub.dev/packages/responsive_framework),
+package that will make it easier to make our `Flutter` app responsive.
+- [`path`](https://pub.dev/packages/path)
+and [`path_provider`](https://pub.dev/packages/path_provider),
+needed to find the path of chosen images.
+
+To install of these packages, 
+head over to `pubspec.yaml`
+and inside the `dependencies` section,
+add the following lines:
+
+```dart
+  flutter_quill: ^7.3.3
+  flutter_quill_extensions: ^0.4.0
+  file_picker: ^5.3.3
+  universal_io: ^2.2.2
+  responsive_framework: ^1.1.0
+  universal_html: ^2.2.3
+  path: ^1.8.3
+  path_provider: ^2.1.0
+```
+
+And run `flutter pub get` to download these dependencies.
+
+
+## 2. Setting up the responsive framework
+
+Now that we have all the dependencies we need,
+let's start by setting up all the needed breakpoints
+from the `responsive_framework`
+to make our app responsive 
+and *conditionally show elements*
+according to the device size.
+
+Head over to `main.dart`
+and paste the following:
+
+```dart
+import 'package:app/home_page.dart';
+import 'package:flutter/material.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(App(
+    platformService: PlatformService(),
+  ),);
+}
+
+/// Entry gateway to the application.
+/// Defining the MaterialApp attributes and Responsive Framework breakpoints.
+class App extends StatelessWidget {
+  const App({required this.platformService, super.key});
+
+  final PlatformService platformService;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Editor Demo',
+      builder: (context, child) => ResponsiveBreakpoints.builder(
+        child: child!,
+        breakpoints: [
+          const Breakpoint(start: 0, end: 425, name: MOBILE),
+          const Breakpoint(start: 426, end: 768, name: TABLET),
+          const Breakpoint(start: 769, end: 1440, name: DESKTOP),
+          const Breakpoint(start: 1441, end: double.infinity, name: '4K'),
+        ],
+      ),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+        useMaterial3: true,
+      ),
+      home: HomePage(platformService: platformService),
+    );
+  }
+}
+
+/// Platform service class that tells if the platform is web-based or not
+class PlatformService {
+  bool isWebPlatform() {
+    return kIsWeb;
+  }
+}
+```
+
+Let's break this down!
+
+- inside `main()`, we initialize the app 
+by passing a `platformService`,
+our own small [stubbable](https://en.wikipedia.org/wiki/Method_stub)
+class that will allow us to check in tests whether the device
+is mobile or desktop-based.
+- our app is wrapped in `MaterialApp`.
+In the `builder` parameter,
+we define the `responsive_framework` breakpoints
+to conditionally render widgets according to the device's size.
+- we define the `HomePage` in the `home` parameter.
+This `HomePage` class is not yet defined.
+
+This will fail because `home_page.dart` is not defined.
+Let's do that! 😀
+
+
+## 3. Create `HomePage` with basic editor
+
+In `lib`, create a file called `home_page.dart`
+and paste the following code.
+
+```dart
+
+```
