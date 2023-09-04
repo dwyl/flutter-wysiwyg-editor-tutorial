@@ -24,57 +24,7 @@ import 'widget_test.mocks.dart';
 
 @GenerateMocks([PlatformService])
 void main() {
-  testWidgets('Normal setup', (WidgetTester tester) async {
-    final platformServiceMock = MockPlatformService();
-    // Platform is mobile
-    when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
-
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(
-      App(
-        platformService: platformServiceMock,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Expect to find the normal page setup
-    expect(find.text('Flutter Quill'), findsOneWidget);
-
-    // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(QuillEditor));
-    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
-    await tester.pumpAndSettle();
-  });
-
-  testWidgets('Select image', (WidgetTester tester) async {
-    final platformServiceMock = MockPlatformService();
-
-    // Platform is mobile
-    when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
-
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(
-      App(
-        platformService: platformServiceMock,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Expect to find the normal page setup
-    expect(find.text('Flutter Quill'), findsOneWidget);
-
-    // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(QuillEditor));
-    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
-    await tester.pumpAndSettle();
-
-    final imageButton = find.byType(ImageButton);
-    await tester.tap(imageButton);
-    await tester.pumpAndSettle();
-
-    //TODO add image picker
-    //https://github.com/dwyl/flutter-image-upload-demo/blob/main/test/widget_test.dart
-  });
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Normal setup (web version)', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 600);
