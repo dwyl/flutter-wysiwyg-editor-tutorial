@@ -263,5 +263,87 @@ In `lib`, create a file called `home_page.dart`
 and paste the following code.
 
 ```dart
+/// Importing all the needed imports so the README is easier to follow
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui';
 
+import 'package:app/main.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/extensions.dart';
+import 'package:flutter_quill/flutter_quill.dart' hide Text;
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+
+/// Home page with the `flutter-quill` editor
+class HomePage extends StatefulWidget {
+  const HomePage({
+    required this.platformService, super.key,
+  });
+
+  final PlatformService platformService;
+
+  @override
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+
+  /// `flutter-quill` editor controller
+  QuillController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    /// Loading widget if controller's not loaded
+    if (_controller == null) {
+      return const Scaffold(body: Center(child: Text('Loading...')));
+    }
+
+    /// Returning scaffold with editor as body
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'Flutter Quill',
+        ),
+      ),
+      body: Container(),
+    );
+  }
+}
 ```
+
+We are importing all the needed imports
+right off the bat so we don't have to deal with those later 😉.
+
+In this file, 
+we are simply creating a basic **stateful widget** `HomePage`
+that renders a `Scaffold` widget
+with a `Container()` as its body.
+
+You might have noticed we've defined a 
+[**`QuillController`**](https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/lib/src/widgets/controller.dart)
+`_controller`.
+This controller will keep track of the
+**`deltas`** 
+and the **text** that is written in the editor.
+
+> [!NOTE]  
+> `Deltas` is an object format that represents
+> contents and changes in a readable way.
+> To learn about them, we *highly suggest* visiting
+> https://quilljs.com/docs/delta.
+
+For the Quill Editor to properly function,
+we are going to use this `_controller` parameter later on.
+
