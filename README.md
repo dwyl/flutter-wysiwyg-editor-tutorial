@@ -29,6 +29,7 @@
     - [4.2 Defining triple click selection behaviour](#42-defining-triple-click-selection-behaviour)
     - [4.3 Reassigning `quillEditor` on web platforms](#43-reassigning-quilleditor-on-web-platforms)
       - [4.3.1 Creating web embeds](#431-creating-web-embeds)
+    - [4.4 Creating the toolbar](#44-creating-the-toolbar)
 
 
 # Why? 🤷‍
@@ -654,7 +655,253 @@ As noted in `flutter-quill`'s documentation
 (https://github.com/singerdmx/flutter-quill/tree/master#web),
 we need to define web embeds so Quill Editor works properly.
 
+If we want to embed an image on a web-based platform
+and show it to the person,
+we need to define our own embed.
+For this, create a folder called `web_embeds` inside `lib`.
+Create a file called `web_embeds.dart`
+and paste the following code.
+
+```dart
+
+import 'package:app/main.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'package:universal_html/html.dart' as html;
+
+// Conditionally importing the PlatformViewRegistry class according to the platform
+import 'mobile_platform_registry.dart' if (dart.library.html) 'web_platform_registry.dart' as ui_instance;
+
+/// Custom embed for images to work on the web.
+class ImageEmbedBuilderWeb extends EmbedBuilder {
+  @override
+  String get key => BlockEmbed.imageType;
+
+  @override
+  Widget build(
+    BuildContext context,
+    QuillController controller,
+    Embed node,
+    bool readOnly,
+    bool inline,
+    TextStyle textStyle,
+  ) {
+    final imageUrl = node.value.data;
+    if (isImageBase64(imageUrl)) {
+      // TODO: handle imageUrl of base64
+      return const SizedBox();
+    }
+    final size = MediaQuery.of(context).size;
+
+    // This is needed for images to be correctly embedded on the web.
+    ImageUniversalUI().platformViewRegistry.registerViewFactory(PlatformService(), imageUrl, (viewId) {
+      return html.ImageElement()
+        ..src = imageUrl
+        ..style.height = 'auto'
+        ..style.width = 'auto';
+    });
+
+    // Rendering responsive image
+    return Padding(
+      padding: EdgeInsets.only(
+        right: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
+            ? size.width * 0.5
+            : (ResponsiveBreakpoints.of(context).equals('4K'))
+                ? size.width * 0.75
+                : size.width * 0.2,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.45,
+        child: HtmlElementView(
+          viewType: imageUrl,
+        ),
+      ),
+    );
+  }
+}
+
+/// List of default web embed builders.
+List<EmbedBuilder> get defaultEmbedBuildersWeb => [
+      ImageEmbedBuilderWeb(),
+    ];
+
+```
+
+This is where we define `defaultEmbedBuildersWeb`
+we're using in `_buildEditor()`.
+This array variable uses the `ImageEmbedBuilderWeb`,
+our custom web embed so images are shown in web platforms.
+We technically can add more embeds 
+(for example, to show videos). 
+But for now, let's keep it simple and only allow the person to add images.
+
+The `ImageEmbedBuilderWeb` class pertains 
+to the web image embed, 
+extending the [`EmbedBuilder`](https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/lib/src/widgets/embeds.dart#L9)
+class from `flutter-quill`.
+
+Let's break it down.
+We define the `key` of the class
+of *what type of object the embed pertains to*.
+In our case, it's an image.
+
+```dart
+  @override
+  String get key => BlockEmbed.imageType;
+```
+
+In the `build` function, 
+we render the widget we want in the screen.
+In this case, we render an `ImageElement`
+with the `imageURL` that is passed to the class.
+We use `ResponsiveBreakpoints` from `responsive_framework`
+to show properly show the image across different device sizes.
+
+Inside the `build()` function, you may notice the following lines:
+
+```dart
+    ImageUniversalUI().platformViewRegistry.registerViewFactory(PlatformService(), imageUrl, (viewId) {
+      return html.ImageElement()
+        ..src = imageUrl
+        ..style.height = 'auto'
+        ..style.width = 'auto';
+    });
+```
+
+We need to call `registerViewFactory` from `dart:ui_web`
+so the image is properly shown in web devices.
+If we do not do this, 
+**build compilation fails**.
+This is because the package it's called from doesn't compile
+when we create a build for mobile devices.
+This is why we create a `ImageUniversalUI` class
+that conditionally imports the package
+so it compiles on both type of devices.
+For more information, 
+check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478.
+
+For this to work,
+in the same file,
+add this piece of code:
+
+```dart
+/// Class used to conditionally register the view factory.
+/// For more information, check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478.
+class PlatformViewRegistryFix {
+  void registerViewFactory(PlatformService platformService, imageURL, dynamic cbFnc) {
+    if (platformService.isWebPlatform()) {
+      ui_instance.PlatformViewRegistry.registerViewFactory(
+        imageURL,
+        cbFnc,
+      );
+    }
+  }
+}
+
+/// Class that conditionally registers the `platformViewRegistry`.
+class ImageUniversalUI {
+  PlatformViewRegistryFix platformViewRegistry = PlatformViewRegistryFix();
+}
+```
+
+`PlatformViewRegistryFix` calls the `registerViewFactory`
+only on web platforms.
+It uses the `ui_instance` object, 
+which is conditionally imported on top of the file.
+This `ui_instance` variable uses the appropriate package
+to call `registerViewFactory`.
+
+> [!NOTE]
+> Check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478 
+> for more information about `dart:ui` and `dart:web_ui`
+> to better understand why we need to conditionally import them separately 
+> so the application compiles to both target devices.
+
+This is why we import the correct `ui_instance` 
+so we can compile to both targets `web` and `mobile` devices.
+
+```dart
+import 'mobile_platform_registry.dart' if (dart.library.html) 'web_platform_registry.dart' as ui_instance;
+```
+
+Neither of these files are created.
+So let's do that!
+In the same folder `lib/web_embeds`,
+create `mobile_platform_registry.dart`
+and add:
+
+```dart
+/// Class used to `registerViewFactory` for mobile platforms.
+/// 
+/// Please check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478 for more information.
+class PlatformViewRegistry {
+  static void registerViewFactory(String viewId, dynamic cb) {}
+}
+```
+
+This is just a simple class with `registerViewFactory` function
+that effectively does nothing.
+We don't *need for it to do anything*
+because we are implementing the embed **only for the web**.
+So we just only need this to compile.
+
+Now, in the same folder, create the file `web_platform_registry.dart`
+and add:
+
+```dart
+import 'dart:ui_web' as web_ui;
+
+/// Class used to `registerViewFactory` for web platforms.
+/// 
+/// Please check https://github.com/flutter/flutter/issues/41563#issuecomment-547923478 for more information.
+class PlatformViewRegistry {
+  static void registerViewFactory(String viewId, dynamic cb) {
+    web_ui.platformViewRegistry.registerViewFactory(viewId, cb);
+  }
+}
+```
+
+In here, we are importing `dart:ui_web`
+(which only compiles on web devices)
+and performing the `registerViewFactory`.
+
+And that's it!
+We've successfully created a web embed
+that embeds image on the web!
+
+To recap:
+- we export the `defaultEmbedBuildersWeb`
+array variable with our custom web embed
+`ImageEmbedBuilderWeb()`.
+- `ImageEmbedBuilderWeb` class returns a widget
+that shows an HTML image in the editor.
+For this to work, we need to call `registerViewFactory` 
+from the `dart:web_ui` package.
+- because `dart:web_ui` only compiles for the web,
+we need to import `dart:ui` and `dart:web_ui` 
+separately from different files
+that perform this register.
+This will ensure the packages
+are conditionally imported 
+and compilation always work,
+regardless of the target platform! 
+
+
+### 4.4 Creating the toolbar
+
+Now that we've defined the editor
+and the appropriate web embeds so images work on web devices,
+it's time to create **our toolbar**.
+
+This toolbar will have some options for the person
+to stylize the text (e.g make it bold or italic)
+and add images 
+(which make use of the embed we've just created for web devices).
+
 
 
 - toolbar next
+- show how it passes the imageURL to the web embed
 
