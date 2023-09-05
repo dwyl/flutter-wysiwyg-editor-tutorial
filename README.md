@@ -33,6 +33,7 @@
       - [4.4.1 Defining image embed callbacks](#441-defining-image-embed-callbacks)
     - [4.5 Finishing editor](#45-finishing-editor)
   - [5. Give the app a whirl](#5-give-the-app-a-whirl)
+- [Found this useful?](#found-this-useful)
 
 
 # Why? 🤷‍
@@ -1491,7 +1492,41 @@ We just got ourselves a fancy editor working in our application!
 
 ## 5. Give the app a whirl
 
+Now let's see our app in action!
+If you run the application, 
+you should see something like this!
 
+https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/e859328e-3ae4-4195-b9d6-54d3490cfba1
+
+As you can see, 
+the person can:
+
+- triple select to toggle between 
+none, word and paragraph.
+- add images and resize them accordingly.
+- add text, undo and redo operations.
+- stylize the text accordingly.
+
+
+There are *many* more options one can implement
+using `flutter-quill`, 
+including font-size,
+indentation,
+highlighting and many more!
+Please check https://github.com/singerdmx/flutter-quill
+for this.
+
+
+# Found this useful?
+
+If you found this example useful, 
+please ⭐️ the GitHub repository
+so we (_and others_) know you liked it!
+
+Any questions or suggestions? Do not hesitate to 
+[open new issues](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc)!
+
+Thank you!
 
 - put a breakpoint on flujtter quill source code
 when the image is picked to see if it triggers `image_picker`
