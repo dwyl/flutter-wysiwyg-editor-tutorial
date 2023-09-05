@@ -1567,7 +1567,3 @@ Any questions or suggestions? Do not hesitate to
 
 Thank you!
 
-- put a breakpoint on flujtter quill source code
-when the image is picked to see if it triggers `image_picker`
-
-

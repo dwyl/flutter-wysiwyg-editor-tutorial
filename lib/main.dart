@@ -6,9 +6,11 @@ import 'package:responsive_framework/responsive_framework.dart';
 // coverage:ignore-start
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(App(
-    platformService: PlatformService(),
-  ),);
+  runApp(
+    App(
+      platformService: PlatformService(),
+    ),
+  );
 }
 // coverage:ignore-end
 

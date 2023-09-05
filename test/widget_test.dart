@@ -16,8 +16,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:universal_io/io.dart';
 
 // importing mocks
 import 'widget_test.mocks.dart';
@@ -32,22 +30,23 @@ import 'widget_test.mocks.dart';
 ///
 /// This is currently commented because it crashes with a `PlatformException` stating
 /// the `XFile` instance is an invalid argument (it does the same with `File`).
-/// 
+///
 /// `XFile` would make sense since the line that calls `image-picker`
 /// is in https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/flutter_quill_extensions/lib/embeds/toolbar/image_video_utils.dart#L147.
 void mockImagePicker(WidgetTester tester) {
   const channel = MethodChannel('plugins.flutter.io/image_picker');
 
   Future<XFile?> handler(MethodCall methodCall) async {
-    if (methodCall.method == "pickImage") {
-      final file = XFile("test/sample.jpeg");
+    if (methodCall.method == 'pickImage') {
+      final file = XFile('test/sample.jpeg');
       return file;
     } else {
       return null;
     }
   }
 
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (message) {
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+      (message) {
     return handler(message);
   });
 }
