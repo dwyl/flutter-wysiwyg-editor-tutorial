@@ -30,6 +30,9 @@
     - [4.3 Reassigning `quillEditor` on web platforms](#43-reassigning-quilleditor-on-web-platforms)
       - [4.3.1 Creating web embeds](#431-creating-web-embeds)
     - [4.4 Creating the toolbar](#44-creating-the-toolbar)
+      - [4.4.1 Defining image embed callbacks](#441-defining-image-embed-callbacks)
+    - [4.5 Finishing editor](#45-finishing-editor)
+  - [5. Give the app a whirl](#5-give-the-app-a-whirl)
 
 
 # Why? 🤷‍
@@ -899,9 +902,598 @@ This toolbar will have some options for the person
 to stylize the text (e.g make it bold or italic)
 and add images 
 (which make use of the embed we've just created for web devices).
+We can add custom buttons if we want to.
+
+To define our toolbar, 
+we're going to be using 
+[`QuillToolbar`](https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/lib/src/widgets/toolbar.dart#L53).
+This class has an option where one can define a toolbar easily,
+using `QuillToolbar.basic()`.
+This will render a myriad of features
+that, for this example, we do not need.
+
+Because we only want a handful of features,
+we're going to define `QuillToolbar` normally.
+
+Go back to `_buildEditor()`
+and continue where you left off.
+Let's instantiate our editor.
+
+```dart
+    // Toolbar definitions
+    const toolbarIconSize = 18.0;
+    final embedButtons = FlutterQuillEmbeds.buttons(
+      // Showing only necessary default buttons
+      showCameraButton: false,
+      showFormulaButton: false,
+      showVideoButton: false,
+      showImageButton: true,
+
+      // `onImagePickCallback` is called after image (from any platform) is picked
+      onImagePickCallback: _onImagePickCallback,
+
+      // `webImagePickImpl` is called after image (from web) is picked and then `onImagePickCallback` is called
+      webImagePickImpl: _webImagePickImpl,
+
+      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
+      mediaPickSettingSelector: (context) {
+        return Future.value(MediaPickSetting.Gallery);
+      },
+    );
+
+    // Instantiating the toolbar
+    final toolbar = QuillToolbar(
+      afterButtonPressed: _focusNode.requestFocus,
+      children: [
+        HistoryButton(
+          icon: Icons.undo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: true,
+        ),
+        HistoryButton(
+          icon: Icons.redo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: false,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.bold,
+          icon: Icons.format_bold,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.italic,
+          icon: Icons.format_italic,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.underline,
+          icon: Icons.format_underline,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.strikeThrough,
+          icon: Icons.format_strikethrough,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+      ],
+    );
+```
+
+Let's go over piece by piece 😃.
+
+- **`embedButtons`** is a class
+[`FlutterQuillEmbeds`](https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/flutter_quill_extensions/lib/flutter_quill_extensions.dart#L22)
+from the `flutter_quill_extensions` package.
+With this class,
+we can define the buttons pertaining
+to embeds that are shown in the editor.
+It has a few parameters that we can set.
+
+  - `showCameraButton`, a boolean where we can set
+if the camera button is shown.
+  - `showFormulaButton`, a boolean where we can set
+if the formula button is shown.
+This allows mathematical expressions to be created.
+  - `showVideoButton`, a boolean where we can set
+if the video button is shown.
+This will allow embedding videos.
+**Remember that you'll need a video web embed similar to the image embed we've created for this to work on the web**.
+You'll also need to implement the `onVideoPickCallback`
+and `webVideoPickImpl` for this to work.
+  - `showImageButton`, a boolean where we can set
+if the image button is shown.
+This will allow embedding images.
+**Remember that you'll need an image web embed for this to work on the web.**.
+You'll also need to implement the 
+`onImagePickCallback` and `webImagePickImpl` for this to properly work.
+  - `onImagePickCallback` is called after image (from any platform)
+is picked.
+  - `webImagePickImpl` is called after image is picked on web devices.
+`onImagePickCallback` is called after this function.
+  - `mediaPickSettingSelector` is where we can define
+whether we want to show a modal asking the person
+if they want to add media from the gallery or from a web link.
+In our case, we just want to show the gallery.
+
+This array of embed buttons are used
+in the definition of the toolbar `QuillToolbar`,
+which is made right afterwards.
+
+- the `afterButtonPressed` parameter 
+is used as callback to request *back* the focus
+from the keyboard.
+- the `children` will render buttons.
+We've defined the embed buttons prior
+and we are rendering them 
+in `for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),`.
+In addition to this, 
+we are adding a few more buttons
+to stylize text
+and undo/redo text changes operations.
+  - `HistoryButton` to undo/redo changes
+made to the editor.
+This is made because every change is tracked in the `Delta` document.
+  - `ToggleStyleButton` is used to stylize text.
+We can make text **bold**, *italic*,
+<ins>underline</ins> and ~~strikethrough~~.
+
+
+We've mentioned the functions 
+`onImagePickCallback`
+and `webImagePickImpl` when defining
+the array of custom embed buttons.
+However, we haven't yet defined them.
+Let's do that!
+
+
+#### 4.4.1 Defining image embed callbacks
+
+In `HomePageState`, 
+add the two needed functions.
+
+```dart
+  Future<String> _onImagePickCallback(File file) async {
+
+    if (!widget.platformService.isWebPlatform()) {
+      // Copies the picked file from temporary cache to applications directory
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+      return copiedFile.path.toString();
+    } else {
+      // TODO: This doesn't work on the web yet.
+      // This is because Flutter on the web (browsers) does not have the path of local files.
+
+      // But because of the web embeds we've created, we *know* this works.
+      // You can try returning a link to see it working.
+
+      //return "https://pbs.twimg.com/media/EzmJ_YBVgAEnoF2?format=jpg&name=large";
+
+      return file.path;
+    }
+  }
+
+  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
+    // Lets the user pick one file; files with any file extension can be selected
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+    // The result will be null, if the user aborted the dialog
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+
+    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
+    final platformFile = result.files.first;
+    final bytes = platformFile.bytes;
+
+    if (bytes == null) {
+      return null;
+    }
+
+    final file = File.fromRawPath(bytes);
+    return onImagePickCallback(file);
+  }
+```
+
+- **`_onImagePickCallback`** returns the path of the file
+so it is correctly rendered on the editor.
+We need to define the path for both mobile and web versions.
+This is because the custom web embed we've created earlier 
+`ImageEmbedBuilderWeb` **uses this file path to render the image**.
+However, currently, this doesn't work on the web
+because *paths aren't accessible from browsers*,
+as they provide fake paths.
+See https://stackoverflow.com/questions/66032845/get-file-path-from-system-directory-using-flutter-web-chrome-to-read-file-cont 
+for more context.
+
+- **`_webImagePickImpl`** is called after the person
+picks an image in a browser.
+We use this to open the gallery so the person
+clicks on the image they want to embed
+(by using [`file-picker`](https://pub.dev/packages/file_picker))
+and returning the `File` object
+and pass it to `onImagePickCallback()`.
+
+
+### 4.5 Finishing editor
+
+Now that we have the proper callback implemented,
+all that's left is finish our `_buildEditor()` function! 😊
+
+All we need to do is return the widget
+that will render the editor on the page.
+
+```dart
+    return SafeArea(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 15,
+            child: Container(
+              key: quillEditorKey,
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 16, right: 16),
+              child: quillEditor,
+            ),
+          ),
+          Container(child: toolbar),
+        ],
+      ),
+    );
+```
+
+As you can see, we are using the `quillEditor`
+inside the `Expanded` widget to take all the space.
+Below it, we render a `Container`
+with the `toolbar` we've defined.
+
+And that's it!
+
+Your `lib/home_page.dart` file should now look like so:
+
+```dart
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:app/main.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/extensions.dart';
+import 'package:flutter_quill/flutter_quill.dart' hide Text;
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'web_embeds/web_embeds.dart';
+
+const quillEditorKey = Key('quillEditorKey');
+
+/// Types of selection that person can make when triple clicking
+enum _SelectionType {
+  none,
+  word,
+}
+
+/// Home page with the `flutter-quill` editor
+class HomePage extends StatefulWidget {
+  const HomePage({
+    required this.platformService, super.key,
+  });
+
+  final PlatformService platformService;
+
+  @override
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+  /// `flutter-quill` editor controller
+  QuillController? _controller;
+
+  /// Focus node used to obtain keyboard focus and events
+  final FocusNode _focusNode = FocusNode();
+
+  /// Selection types for triple clicking
+  _SelectionType _selectionType = _SelectionType.none;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeText();
+  }
+
+  /// Initializing the [Delta](https://quilljs.com/docs/delta/) document with sample text.
+  Future<void> _initializeText() async {
+    // final doc = Document()..insert(0, 'Just a friendly empty text :)');
+    final doc = Document();
+    setState(() {
+      _controller = QuillController(document: doc, selection: const TextSelection.collapsed(offset: 0));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    /// Loading widget if controller's not loaded
+    if (_controller == null) {
+      return const Scaffold(body: Center(child: Text('Loading...')));
+    }
+
+    /// Returning scaffold with editor as body
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        title: const Text(
+          'Flutter Quill',
+        ),
+      ),
+      body: _buildEditor(context),
+    );
+  }
+
+  /// Callback called whenever the person taps on the text.
+  /// It will select nothing, then the word if another tap is detected
+  /// and then the whole text if another tap is detected (triple).
+  bool _onTripleClickSelection() {
+    final controller = _controller!;
+
+    // If nothing is selected, selection type is `none`
+    if (controller.selection.isCollapsed) {
+      _selectionType = _SelectionType.none;
+    }
+
+    // If nothing is selected, selection type becomes `word
+    if (_selectionType == _SelectionType.none) {
+      _selectionType = _SelectionType.word;
+      return false;
+    }
+
+    // If the word is selected, select all text
+    if (_selectionType == _SelectionType.word) {
+      final child = controller.document.queryChild(
+        controller.selection.baseOffset,
+      );
+      final offset = child.node?.documentOffset ?? 0;
+      final length = child.node?.length ?? 0;
+
+      final selection = TextSelection(
+        baseOffset: offset,
+        extentOffset: offset + length,
+      );
+
+      // Select all text and make next selection to `none`
+      controller.updateSelection(selection, ChangeSource.REMOTE);
+
+      _selectionType = _SelectionType.none;
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Build the `flutter-quill` editor to be shown on screen.
+  Widget _buildEditor(BuildContext context) {
+    // Default editor (for mobile devices)
+    Widget quillEditor = QuillEditor(
+      controller: _controller!,
+      scrollController: ScrollController(),
+      scrollable: true,
+      focusNode: _focusNode,
+      autoFocus: false,
+      readOnly: false,
+      placeholder: 'Write what\'s on your mind.',
+      enableSelectionToolbar: isMobile(),
+      expands: false,
+      padding: EdgeInsets.zero,
+      onTapUp: (details, p1) {
+        return _onTripleClickSelection();
+      },
+      customStyles: DefaultStyles(
+        h1: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 32,
+            color: Colors.black,
+            height: 1.15,
+            fontWeight: FontWeight.w300,
+          ),
+          const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        sizeSmall: const TextStyle(fontSize: 9),
+        subscript: const TextStyle(
+          fontFamily: 'SF-UI-Display',
+          fontFeatures: [FontFeature.subscripts()],
+        ),
+        superscript: const TextStyle(
+          fontFamily: 'SF-UI-Display',
+          fontFeatures: [FontFeature.superscripts()],
+        ),
+      ),
+      embedBuilders: [...FlutterQuillEmbeds.builders()],
+    );
+
+    // Alternatively, the web editor version is shown  (with the web embeds)
+    if (widget.platformService.isWebPlatform()) {
+      quillEditor = QuillEditor(
+        controller: _controller!,
+        scrollController: ScrollController(),
+        scrollable: true,
+        focusNode: _focusNode,
+        autoFocus: false,
+        readOnly: false,
+        placeholder: 'Add content',
+        expands: false,
+        padding: EdgeInsets.zero,
+        onTapUp: (details, p1) {
+          return _onTripleClickSelection();
+        },
+        customStyles: DefaultStyles(
+          h1: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 32,
+              color: Colors.black,
+              height: 1.15,
+              fontWeight: FontWeight.w300,
+            ),
+            const VerticalSpacing(16, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          sizeSmall: const TextStyle(fontSize: 9),
+        ),
+        embedBuilders: [...defaultEmbedBuildersWeb],
+      );
+    }
+
+    // Toolbar definitions
+    const toolbarIconSize = 18.0;
+    final embedButtons = FlutterQuillEmbeds.buttons(
+      // Showing only necessary default buttons
+      showCameraButton: false,
+      showFormulaButton: false,
+      showVideoButton: false,
+      showImageButton: true,
+
+      // `onImagePickCallback` is called after image (from any platform) is picked
+      onImagePickCallback: _onImagePickCallback,
+
+      // `webImagePickImpl` is called after image (from web) is picked and then `onImagePickCallback` is called
+      webImagePickImpl: _webImagePickImpl,
+
+      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
+      mediaPickSettingSelector: (context) {
+        return Future.value(MediaPickSetting.Gallery);
+      },
+    );
+
+    // Instantiating the toolbar
+    final toolbar = QuillToolbar(
+      afterButtonPressed: _focusNode.requestFocus,
+      children: [
+        HistoryButton(
+          icon: Icons.undo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: true,
+        ),
+        HistoryButton(
+          icon: Icons.redo_outlined,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+          undo: false,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.bold,
+          icon: Icons.format_bold,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.italic,
+          icon: Icons.format_italic,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.underline,
+          icon: Icons.format_underline,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        ToggleStyleButton(
+          attribute: Attribute.strikeThrough,
+          icon: Icons.format_strikethrough,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+      ],
+    );
+
+    // Rendering the final editor + toolbar
+    return SafeArea(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 15,
+            child: Container(
+              key: quillEditorKey,
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 16, right: 16),
+              child: quillEditor,
+            ),
+          ),
+          Container(child: toolbar),
+        ],
+      ),
+    );
+  }
+
+  // Renders the image picked by imagePicker from local file storage
+  // You can also upload the picked image to any server (eg : AWS s3
+  // or Firebase) and then return the uploaded image URL.
+  Future<String> _onImagePickCallback(File file) async {
+    //return "https://pbs.twimg.com/media/EzmJ_YBVgAEnoF2?format=jpg&name=large";
+    if (!widget.platformService.isWebPlatform()) {
+      // Copies the picked file from temporary cache to applications directory
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+      return copiedFile.path.toString();
+    } else {
+      // TODO: This will fail on web
+      // Might have to upload to S3 or embed a canvas like https://stackoverflow.com/questions/71798042/flutter-how-do-i-write-a-file-to-local-directory-with-path-provider.
+
+      return file.path;
+    }
+  }
+
+  /// Callback that is called after an image is picked whilst on the web platform.
+  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
+    // Lets the user pick one file; files with any file extension can be selected
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+
+    // The result will be null, if the user aborted the dialog
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+
+    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
+    final platformFile = result.files.first;
+    final bytes = platformFile.bytes;
+
+    if (bytes == null) {
+      return null;
+    }
+
+    final file = File.fromRawPath(bytes);
+
+    return onImagePickCallback(file);
+  }
+}
+```
+
+Congratulations! 🥳
+
+We just got ourselves a fancy editor working in our application!
+
+
+## 5. Give the app a whirl
 
 
 
-- toolbar next
-- show how it passes the imageURL to the web embed
+- put a breakpoint on flujtter quill source code
+when the image is picked to see if it triggers `image_picker`
+
 
