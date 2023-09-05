@@ -5,21 +5,60 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
+import 'package:cross_file/cross_file.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill_test.dart';
 
 import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_io/io.dart';
+
 // importing mocks
 import 'widget_test.mocks.dart';
 
+/// This attempts to override the `image_picker` plugin inside `flutter-quill`,
+/// but is currently failing.
+///
+/// Please check the links below for more context.
+/// https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working
+/// and https://stackoverflow.com/questions/52028969/testing-flutter-code-that-uses-a-plugin-and-platform-channel
+/// and https://docs.flutter.dev/testing/plugins-in-tests#mock-the-platform-channel
+///
+/// This is currently commented because it crashes with a `PlatformException` stating
+/// the `XFile` instance is an invalid argument (it does the same with `File`).
+/// 
+/// `XFile` would make sense since the line that calls `image-picker`
+/// is in https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/flutter_quill_extensions/lib/embeds/toolbar/image_video_utils.dart#L147.
+void mockImagePicker(WidgetTester tester) {
+  const channel = MethodChannel('plugins.flutter.io/image_picker');
+
+  Future<XFile?> handler(MethodCall methodCall) async {
+    if (methodCall.method == "pickImage") {
+      final file = XFile("test/sample.jpeg");
+      return file;
+    } else {
+      return null;
+    }
+  }
+
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (message) {
+    return handler(message);
+  });
+}
+
 @GenerateMocks([PlatformService])
 void main() {
+  /// Check for context: https://stackoverflow.com/questions/60671728/unable-to-load-assets-in-flutter-tests
+  setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+
   testWidgets('Normal setup', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
     // Platform is mobile
@@ -48,6 +87,9 @@ void main() {
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
+    // Mock image
+    // mockImagePicker(tester);
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
@@ -67,9 +109,6 @@ void main() {
     final imageButton = find.byType(ImageButton);
     await tester.tap(imageButton);
     await tester.pumpAndSettle();
-
-    //TODO add image picker
-    //https://github.com/dwyl/flutter-image-upload-demo/blob/main/test/widget_test.dart
   });
 
   testWidgets('Normal setup (web version)', (WidgetTester tester) async {

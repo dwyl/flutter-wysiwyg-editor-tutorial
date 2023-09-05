@@ -24,7 +24,8 @@ enum _SelectionType {
 /// Home page with the `flutter-quill` editor
 class HomePage extends StatefulWidget {
   const HomePage({
-    required this.platformService, super.key,
+    required this.platformService,
+    super.key,
   });
 
   final PlatformService platformService;
@@ -317,10 +318,6 @@ class HomePageState extends State<HomePage> {
     }
 
     final file = File.fromRawPath(bytes);
-
-    // TODO maybe I don't need to call `onImagePickCallback` here.
-    // Recheck the flow on mobile devices and then on the web, do not call `onImagePickCallback` here.
-    // Let's try to use base64 or something
 
     return onImagePickCallback(file);
   }
