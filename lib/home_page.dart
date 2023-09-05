@@ -56,7 +56,9 @@ class HomePageState extends State<HomePage> {
     final doc = Document();
     setState(() {
       _controller = QuillController(
-          document: doc, selection: const TextSelection.collapsed(offset: 0));
+        document: doc,
+        selection: const TextSelection.collapsed(offset: 0),
+      );
     });
   }
 
@@ -258,8 +260,7 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
-        for (final builder in embedButtons)
-          builder(_controller!, toolbarIconSize, null, null),
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
       ],
     );
 
@@ -291,8 +292,7 @@ class HomePageState extends State<HomePage> {
     if (!widget.platformService.isWebPlatform()) {
       // Copies the picked file from temporary cache to applications directory
       final appDocDir = await getApplicationDocumentsDirectory();
-      final copiedFile =
-          await file.copy('${appDocDir.path}/${basename(file.path)}');
+      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
       return copiedFile.path.toString();
     } else {
       // TODO: This will fail on web
@@ -303,8 +303,7 @@ class HomePageState extends State<HomePage> {
   }
 
   /// Callback that is called after an image is picked whilst on the web platform.
-  Future<String?> _webImagePickImpl(
-      OnImagePickCallback onImagePickCallback) async {
+  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
     // Lets the user pick one file; files with any file extension can be selected
     final result = await ImageFilePicker().pickImage();
 
@@ -330,7 +329,6 @@ class HomePageState extends State<HomePage> {
 // coverage:ignore-start
 /// Image file picker wrapper class
 class ImageFilePicker {
-  Future<FilePickerResult?> pickImage() =>
-      FilePicker.platform.pickFiles(type: FileType.image);
+  Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
 }
 // coverage:ignore-end
