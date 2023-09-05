@@ -1547,6 +1547,14 @@ but to no avail.
 We've opened an issue on `flutter-quill` about this.
 You can visit it in https://github.com/singerdmx/flutter-quill/issues/1389.
 
+Therefore, pieces of code related to image and video embeds
+aren't being covered by the tests.
+This includes functions like 
+`_onImagePickCallback`
+and `_webImagePickImpl`.
+It also includes custom web embeds, 
+which means the class `ImageEmbedBuilderWeb`
+is also not covered.
 
 # Found this useful?
 
