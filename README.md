@@ -33,6 +33,7 @@
       - [4.4.1 Defining image embed callbacks](#441-defining-image-embed-callbacks)
     - [4.5 Finishing editor](#45-finishing-editor)
   - [5. Give the app a whirl](#5-give-the-app-a-whirl)
+- [A note about testing 🧪](#a-note-about-testing-)
 - [Found this useful?](#found-this-useful)
 
 
@@ -1515,6 +1516,36 @@ indentation,
 highlighting and many more!
 Please check https://github.com/singerdmx/flutter-quill
 for this.
+
+
+# A note about testing 🧪
+
+We try to get tests covering 100% of the lines of code 
+in every repository we make.
+However, it is worth mentioning that,
+due to lack of documentation 
+and testing from `flutter-quill`,
+it becomes difficult to do so in this project.
+
+This is why the coverage is not at a 100% in this repo.
+This is mainly because we aren't able to simulate
+a person choosing an image when the gallery pops up
+in `widgetTest`s. 
+
+Because on mobile devices, 
+`flutter-quill` uses [`image-picker`](https://pub.dev/packages/image_picker)
+under the hood,
+it is impossible to *[directly mock it](https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working)*.
+
+In addition to this,
+we have inclusively
+tried overriding its behaviour with 
+[platform channels](https://docs.flutter.dev/testing/plugins-in-tests#mock-the-platform-channel)
+and using [`setMockMethodCallHandler`](https://stackoverflow.com/questions/52028969/testing-flutter-code-that-uses-a-plugin-and-platform-channel),
+but to no avail.
+
+We've opened an issue on `flutter-quill` about this.
+You can visit it in https://github.com/singerdmx/flutter-quill/issues/1389.
 
 
 # Found this useful?
