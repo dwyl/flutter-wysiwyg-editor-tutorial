@@ -1545,7 +1545,8 @@ and using [`setMockMethodCallHandler`](https://stackoverflow.com/questions/52028
 but to no avail.
 
 We've opened an issue on `flutter-quill` about this.
-You can visit it in https://github.com/singerdmx/flutter-quill/issues/1389.
+You can visit it in https://github.com/singerdmx/flutter-quill/issues/1389
+if you want more information about this issue.
 
 Therefore, pieces of code related to image and video embeds
 aren't being covered by the tests.
