@@ -120,7 +120,7 @@ this output on the terminal.
 This means everything is correctly set up!
 We are ready to start implementing!
 
-### **Make sure your `flutter` is up-to-date!
+### Make sure your `flutter` is up-to-date!
 
 Make sure you are running the latest version of `Flutter`!
 You can make a run-through of the versions by running:
