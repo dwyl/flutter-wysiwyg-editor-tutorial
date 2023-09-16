@@ -1,8 +1,9 @@
 <div align="center">
 
-# `Flutter` `WYSIWYG` editor tutorial
+# `Flutter` `WYSIWYG` Editor Tutorial
 
-📱 📝 How to do WYSIWYG editing in Flutter in a few easy steps.
+📱 📝 How to do WYSIWYG ("What You See Is What You Get") editing 
+in `Flutter` in a few easy steps.
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/dwyl/flutter-wysiwyg-editor-tutorial/ci.yml?label=build&style=flat-square&branch=main)
 [![codecov.io](https://img.shields.io/codecov/c/github/dwyl/flutter-wysiwyg-editor-tutorial/master.svg?style=flat-square)](https://codecov.io/github/dwyl/flutter-wysiwyg-editor-tutorial?branch=master)
@@ -10,17 +11,20 @@
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat-square)](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/issues)
 
 
+![dwyl-wysiwyg-demo-optimized](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/194400/08c6daff-33be-4f1a-9077-012cfd52b72c)
+
+
 </div>
 <br />
 
-- [`Flutter` `WYSIWYG` editor tutorial](#flutter-wysiwyg-editor-tutorial)
+- [`Flutter` `WYSIWYG` Editor Tutorial](#flutter-wysiwyg-editor-tutorial)
 - [Why? 🤷‍](#why-)
 - [What? 💭](#what-)
 - [Who? 👤](#who-)
 - [_How_? 👩‍💻](#how-)
   - [Prerequisites? 📝](#prerequisites-)
   - [0. Project setup](#0-project-setup)
-    - [\*\*Make sure your `flutter` is up-to-date!](#make-sure-your-flutter-is-up-to-date)
+    - [Make sure your `Flutter` is up-to-date!](#make-sure-your-flutter-is-up-to-date)
   - [1. Installing all the needed dependencies](#1-installing-all-the-needed-dependencies)
   - [2. Setting up the responsive framework](#2-setting-up-the-responsive-framework)
   - [3. Create `HomePage` with basic editor](#3-create-homepage-with-basic-editor)
@@ -39,12 +43,18 @@
 
 # Why? 🤷‍
 
-On our [`app`](https://github.com/dwyl/app),
-people will add their todo items.
-To do so, they *need* a capable editor
-that is easy-to-use that also supports
-customization
-(new buttons).
+Our 
+[`app`](https://github.com/dwyl/app),
+allows `people` to add `items` of `text`
+which get _transformed_ into several types of `list`.
+e.g: `Todo List`, `Shopping List`, `Exercises`, etc. 
+We *need* a capable editor
+that is easy-to-use
+and supports customization
+(new buttons)
+to allow them to _easily_ 
+transform their `plaintext` into `richtext` 
+e.g: headings, bold, highlights, links and images!
 
 # What? 💭
 
@@ -54,8 +64,8 @@ to their heart's content
 and customize it to their liking.
 
 This repo will showcase an introduction
-of a `WYSIWYG` Rich Text editor 
-that can be used on both mobile and web devices.
+of a `WYSIWYG` Rich Text Editor 
+that can be used on both `Mobile` and `Web`.
 We want this editor to be *extensible*, 
 meaning that we want to add specific features
 and *introduce them* to the person
@@ -68,13 +78,12 @@ This quick demo is aimed at people in the @dwyl team
 or anyone who is interested in learning 
 more about building a `WYSIWYG` editor.
 
-> [!WARNING]
-> 
-> Do take note that this guide is meant 
-> **only for `mobile devices` and `web apps`**.
-> It is **not** tailored to Flutter desktop applications.
-> We'll be focusing on the web and mobile devices
-> because it's more important *to us* 
+> **Note**: this guide is meant 
+> **only for `Mobile` devices and `Web` Apps**.
+> It is ***not*** tailored to **`Desktop` apps**.
+> We are focusing on the `Web` and `Mobile` devices
+> because it's 
+> [more important *to us*](https://github.com/dwyl/learn-flutter#mac-focussed-) 
 > and because it's simpler to understand.
 > Some implementation details will need to be changed
 > if you want this to work on desktop applications.
@@ -91,7 +100,7 @@ more about building a `WYSIWYG` editor.
 This demo assumes you have foundational knowledge of `Flutter`.
 If this is your first time tinkering with `Flutter`,
 we suggest you first take a look at 
-https://github.com/dwyl/learn-flutter.
+[dwyl/learn-flutter](https://github.com/dwyl/learn-flutter)
 
 In the linked repo, you will learn 
 how to install the needed dependencies
@@ -120,7 +129,7 @@ this output on the terminal.
 This means everything is correctly set up!
 We are ready to start implementing!
 
-### Make sure your `flutter` is up-to-date!
+### Make sure your `Flutter` is up-to-date!
 
 Make sure you are running the latest version of `Flutter`!
 You can make a run-through of the versions by running:
