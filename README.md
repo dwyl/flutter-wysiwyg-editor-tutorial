@@ -36,7 +36,11 @@ in `Flutter` in a few easy steps.
     - [4.4 Creating the toolbar](#44-creating-the-toolbar)
       - [4.4.1 Defining image embed callbacks](#441-defining-image-embed-callbacks)
     - [4.5 Finishing editor](#45-finishing-editor)
-  - [5. Give the app a whirl](#5-give-the-app-a-whirl)
+  - [5. Getting images to work on the web](#5-getting-images-to-work-on-the-web)
+    - [5.1 Install the needed dependencies](#51-install-the-needed-dependencies)
+    - [5.2 Change the `_webImagePickImpl` callback function](#52-change-the-_webimagepickimpl-callback-function)
+    - [5.3 Change the `_onImagePickCallback` callback function](#53-change-the-_onimagepickcallback-callback-function)
+  - [6. Give the app a whirl](#6-give-the-app-a-whirl)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Found this useful?](#found-this-useful)
 
@@ -1585,7 +1589,136 @@ Congratulations! 🥳
 We just got ourselves a fancy editor working in our application!
 
 
-## 5. Give the app a whirl
+
+## 5. Getting images to work on the web
+
+As we've mentioned before,
+we currently can't get the images
+to correctly show in the editor
+upon prompting the person to select an image.
+
+As we've stated before,
+the reason images don't show up on the web
+is because we don't have the concept
+of **local file paths**. 
+So the browser is not able to render the image.
+
+However, we can leverage [`dwyl-imgup`](https://github.com/dwyl/imgup)
+to **upload the image**
+and **render it according to the provided URL**
+where the image is hosted.
+
+Let's get to work!
+
+
+### 5.1 Install the needed dependencies
+
+Before doing this,
+let's install some dependencies.
+Add these lines to `pubspec.yaml`,
+in the `dependencies` section.
+
+```yaml
+  http: ^0.13.6
+  mime: ^1.0.4
+  http_parser: ^4.0.2
+```
+
+- [**`http`**](https://pub.dev/packages/http): 
+library to make HTTP requests.
+- [**`mime`**](https://pub.dev/packages/mime): 
+determines the MIME type definition of media types.
+- [**`http_parser`**](https://pub.dev/packages/http_parser): 
+library for parsing and serializing HTTP-related formats.
+Will be used to parse the response from `imgup`.
+
+
+### 5.2 Change the `_webImagePickImpl` callback function
+
+The `_webImagePickImpl` callback
+is invoked when the person picks an image
+on the web platform.
+
+Therefore, we are going to use the
+**array of bytes**
+and use it to get the MIME type of the file
+and create a 
+[`MultipartRequest`](https://pub.dev/documentation/http/latest/http/MultipartRequest-class.html)
+to the `imgup` server.
+
+```dart
+  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
+    // Lets the user pick one file; files with any file extension can be selected
+    final result = await ImageFilePicker().pickImage();
+
+    // The result will be null, if the user aborted the dialog
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+
+    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
+    final platformFile = result.files.first;
+    final bytes = platformFile.bytes;
+
+    if (bytes == null) {
+      return null;
+    }
+
+    // Make HTTP request to upload the image to the file
+    const apiURL = 'https://imgup.fly.dev/api/images';
+    final request = http.MultipartRequest('POST', Uri.parse(apiURL));
+
+    final httpImage = http.MultipartFile.fromBytes('image', bytes,
+        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name);
+    request.files.add(httpImage);
+
+    // Check the response and handle accordingly
+    return http.Client().send(request).then((response) async {
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final responseStream = await http.Response.fromStream(response);
+      final responseData = json.decode(responseStream.body);
+      return responseData['url'];
+    });
+  }
+
+```
+
+We receive the response from `imgup` and,
+depending on whether the upload was successful or not,
+we retrieve the `url` where the image is hosted.
+
+If the upload fails,
+we return `null`,
+the same way we return `null` 
+when the person cancels the upload.
+Therefore, nothing happens.
+
+
+### 5.3 Change the `_onImagePickCallback` callback function
+
+Now that `_webImagePickImpl` isn't invoking `_onImagePickCallback`,
+we don't need to conditionally check 
+if the platform is web-based or not.
+
+Therefore, change it to the following.
+
+```dart
+  Future<String> _onImagePickCallback(File file) async {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+      return copiedFile.path.toString();
+  }
+```
+
+Because the function is only called on mobile devices,
+we know for sure that it will run correctly every time.
+
+
+
+## 6. Give the app a whirl
 
 Now let's see our app in action!
 If you run the application, 
@@ -1602,7 +1735,6 @@ none, word and paragraph.
 - add text, undo and redo operations.
 - stylize the text accordingly.
 
-
 There are *many* more options one can implement
 using `flutter-quill`, 
 including font-size,
@@ -1610,6 +1742,31 @@ indentation,
 highlighting and many more!
 Please check https://github.com/singerdmx/flutter-quill
 for this.
+
+> [!NOTE]
+>
+> If you are having trouble executing on an iPhone device,
+> please follow the instructions in https://github.com/dwyl/learn-flutter#ios.
+>
+> In our case,
+> we had to add the following lines 
+> to `ios/Runner/Info.plist`.
+>
+> ```yaml
+> <key>NSPhotoLibraryAddUsageDescription</key>
+> <string>Needs gallery access to embed images</string>
+> <key>NSPhotoLibraryUsageDescription</key>
+> <string>Needs gallery access to embed images</string>
+> <key>UIApplicationSupportsIndirectInputEvents</key>
+> <true/>
+> ```
+>
+> You need to do this through `XCode`. 
+> Check the following image to add these lines through `XCode`.
+> If you don't, Apple's binary decoder might have some trouble
+> interpreting your changed `Info.plist` file.
+>
+> ![xcode](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/49274c28-2e1a-4dca-9195-73160a6f936f)
 
 
 # A note about testing 🧪
