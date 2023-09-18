@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -8,8 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:http/http.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 import 'web_embeds/web_embeds.dart';
 
@@ -295,6 +300,7 @@ class HomePageState extends State<HomePage> {
       final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
       return copiedFile.path.toString();
     } else {
+      final bruh = file;
       // TODO: This will fail on web
       // Might have to upload to S3 or embed a canvas like https://stackoverflow.com/questions/71798042/flutter-how-do-i-write-a-file-to-local-directory-with-path-provider.
 
@@ -320,9 +326,24 @@ class HomePageState extends State<HomePage> {
       return null;
     }
 
-    final file = File.fromRawPath(bytes);
+    // Make HTTP request to upload the image to the file
+    const apiURL = 'https://imgup.fly.dev/api/images';
+    final request = http.MultipartRequest('POST', Uri.parse(apiURL));
 
-    return onImagePickCallback(file);
+    final httpImage = http.MultipartFile.fromBytes('image', bytes,
+        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name);
+    request.files.add(httpImage);
+
+    // Check the response and handle accordingly
+    return http.Client().send(request).then((response) async {
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final responseStream = await http.Response.fromStream(response);
+      final responseData = json.decode(responseStream.body);
+      return responseData['url'];
+    });
   }
 }
 
