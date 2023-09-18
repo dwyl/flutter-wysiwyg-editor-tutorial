@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:http/http.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
@@ -325,7 +324,7 @@ class HomePageState extends State<HomePage> {
     final request = http.MultipartRequest('POST', Uri.parse(apiURL));
 
     final httpImage = http.MultipartFile.fromBytes('image', bytes,
-        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name);
+        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name,);
     request.files.add(httpImage);
 
     // Check the response and handle accordingly
