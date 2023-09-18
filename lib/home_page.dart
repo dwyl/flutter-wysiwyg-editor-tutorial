@@ -213,10 +213,10 @@ class HomePageState extends State<HomePage> {
       showVideoButton: false,
       showImageButton: true,
 
-      // `onImagePickCallback` is called after image (from any platform) is picked
+      // `onImagePickCallback` is called after image is picked on mobile platforms
       onImagePickCallback: _onImagePickCallback,
 
-      // `webImagePickImpl` is called after image (from web) is picked and then `onImagePickCallback` is called
+      // `webImagePickImpl` is called after image is picked on the web 
       webImagePickImpl: _webImagePickImpl,
 
       // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
@@ -289,26 +289,20 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  // Renders the image picked by imagePicker from local file storage
-  // You can also upload the picked image to any server (eg : AWS s3
-  // or Firebase) and then return the uploaded image URL.
+  /// Renders the image picked by imagePicker from local file storage
+  /// You can also upload the picked image to any server (eg : AWS s3
+  /// or Firebase) and then return the uploaded image URL.
+  /// 
+  /// It's only called on mobile platforms.
   Future<String> _onImagePickCallback(File file) async {
-    //return "https://pbs.twimg.com/media/EzmJ_YBVgAEnoF2?format=jpg&name=large";
-    if (!widget.platformService.isWebPlatform()) {
-      // Copies the picked file from temporary cache to applications directory
       final appDocDir = await getApplicationDocumentsDirectory();
       final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
       return copiedFile.path.toString();
-    } else {
-      final bruh = file;
-      // TODO: This will fail on web
-      // Might have to upload to S3 or embed a canvas like https://stackoverflow.com/questions/71798042/flutter-how-do-i-write-a-file-to-local-directory-with-path-provider.
-
-      return file.path;
-    }
   }
 
   /// Callback that is called after an image is picked whilst on the web platform.
+  /// Returns the URL of the image.
+  /// Returns null if an error occurred uploading the file or the image was not picked.
   Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
     // Lets the user pick one file; files with any file extension can be selected
     final result = await ImageFilePicker().pickImage();
