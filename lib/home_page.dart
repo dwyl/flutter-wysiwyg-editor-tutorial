@@ -6,24 +6,15 @@ import 'dart:ui';
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/extensions.dart';
-import 'package:flutter_quill/flutter_quill.dart' hide Text;
-import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:visual_editor/document/models/attributes/attributes.model.dart';
+import 'package:visual_editor/visual-editor.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 
-import 'web_embeds/web_embeds.dart';
-
 const quillEditorKey = Key('quillEditorKey');
-
-/// Types of selection that person can make when triple clicking
-enum _SelectionType {
-  none,
-  word,
-}
 
 /// Home page with the `flutter-quill` editor
 class HomePage extends StatefulWidget {
@@ -40,13 +31,10 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   /// `flutter-quill` editor controller
-  QuillController? _controller;
+  EditorController? _controller;
 
   /// Focus node used to obtain keyboard focus and events
   final FocusNode _focusNode = FocusNode();
-
-  /// Selection types for triple clicking
-  _SelectionType _selectionType = _SelectionType.none;
 
   @override
   void initState() {
@@ -57,11 +45,10 @@ class HomePageState extends State<HomePage> {
   /// Initializing the [Delta](https://quilljs.com/docs/delta/) document with sample text.
   Future<void> _initializeText() async {
     // final doc = Document()..insert(0, 'Just a friendly empty text :)');
-    final doc = Document();
+    final doc = DeltaDocM();
     setState(() {
-      _controller = QuillController(
+      _controller = EditorController(
         document: doc,
-        selection: const TextSelection.collapsed(offset: 0),
       );
     });
   }
@@ -87,184 +74,134 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  /// Callback called whenever the person taps on the text.
-  /// It will select nothing, then the word if another tap is detected
-  /// and then the whole text if another tap is detected (triple).
-  bool _onTripleClickSelection() {
-    final controller = _controller!;
-
-    // If nothing is selected, selection type is `none`
-    if (controller.selection.isCollapsed) {
-      _selectionType = _SelectionType.none;
-    }
-
-    // If nothing is selected, selection type becomes `word
-    if (_selectionType == _SelectionType.none) {
-      _selectionType = _SelectionType.word;
-      return false;
-    }
-
-    // If the word is selected, select all text
-    if (_selectionType == _SelectionType.word) {
-      final child = controller.document.queryChild(
-        controller.selection.baseOffset,
-      );
-      final offset = child.node?.documentOffset ?? 0;
-      final length = child.node?.length ?? 0;
-
-      final selection = TextSelection(
-        baseOffset: offset,
-        extentOffset: offset + length,
-      );
-
-      // Select all text and make next selection to `none`
-      controller.updateSelection(selection, ChangeSource.REMOTE);
-
-      _selectionType = _SelectionType.none;
-
-      return true;
-    }
-
-    return false;
-  }
-
   /// Build the `flutter-quill` editor to be shown on screen.
   Widget _buildEditor(BuildContext context) {
     // Default editor (for mobile devices)
-    Widget quillEditor = QuillEditor(
+    Widget quillEditor = VisualEditor(
       controller: _controller!,
       scrollController: ScrollController(),
-      scrollable: true,
       focusNode: _focusNode,
-      autoFocus: false,
-      readOnly: false,
-      placeholder: 'Write what\'s on your mind.',
-      enableSelectionToolbar: isMobile(),
-      expands: false,
-      padding: EdgeInsets.zero,
-      onTapUp: (details, p1) {
-        return _onTripleClickSelection();
-      },
-      customStyles: DefaultStyles(
-        h1: DefaultTextBlockStyle(
-          const TextStyle(
-            fontSize: 32,
-            color: Colors.black,
-            height: 1.15,
-            fontWeight: FontWeight.w300,
-          ),
-          const VerticalSpacing(16, 0),
-          const VerticalSpacing(0, 0),
-          null,
-        ),
-        sizeSmall: const TextStyle(fontSize: 9),
-        subscript: const TextStyle(
-          fontFamily: 'SF-UI-Display',
-          fontFeatures: [FontFeature.subscripts()],
-        ),
-        superscript: const TextStyle(
-          fontFamily: 'SF-UI-Display',
-          fontFeatures: [FontFeature.superscripts()],
-        ),
-      ),
-      embedBuilders: [...FlutterQuillEmbeds.builders()],
-    );
-
-    // Alternatively, the web editor version is shown  (with the web embeds)
-    if (widget.platformService.isWebPlatform()) {
-      quillEditor = QuillEditor(
-        controller: _controller!,
-        scrollController: ScrollController(),
+      config: EditorConfigM(
         scrollable: true,
-        focusNode: _focusNode,
         autoFocus: false,
         readOnly: false,
-        placeholder: 'Add content',
+        placeholder: 'Write what\'s on your mind.',
+        enableInteractiveSelection: true,
         expands: false,
         padding: EdgeInsets.zero,
-        onTapUp: (details, p1) {
-          return _onTripleClickSelection();
-        },
-        customStyles: DefaultStyles(
-          h1: DefaultTextBlockStyle(
-            const TextStyle(
+        customStyles: const EditorStylesM(
+          h1: TextBlockStyleM(
+            TextStyle(
               fontSize: 32,
               color: Colors.black,
               height: 1.15,
               fontWeight: FontWeight.w300,
             ),
-            const VerticalSpacing(16, 0),
-            const VerticalSpacing(0, 0),
+            VerticalSpacing(top: 16, bottom: 0),
+            VerticalSpacing(top: 0, bottom: 0),
+            VerticalSpacing(top: 16, bottom: 0),
             null,
           ),
-          sizeSmall: const TextStyle(fontSize: 9),
+          sizeSmall: TextStyle(fontSize: 9),
         ),
-        embedBuilders: [...defaultEmbedBuildersWeb],
+      ),
+    );
+
+    // Alternatively, the web editor version is shown  (with the web embeds)
+    if (widget.platformService.isWebPlatform()) {
+      quillEditor = VisualEditor(
+        controller: _controller!,
+        scrollController: ScrollController(),
+        focusNode: _focusNode,
+        config: EditorConfigM(
+          scrollable: true,
+          enableInteractiveSelection: false,
+          autoFocus: false,
+          readOnly: false,
+          placeholder: 'Add content',
+          expands: false,
+          padding: EdgeInsets.zero,
+          customStyles: const EditorStylesM(
+            h1: TextBlockStyleM(
+              TextStyle(
+                fontSize: 32,
+                color: Colors.black,
+                height: 1.15,
+                fontWeight: FontWeight.w300,
+              ),
+              VerticalSpacing(top: 16, bottom: 0),
+              VerticalSpacing(top: 0, bottom: 0),
+              VerticalSpacing(top: 16, bottom: 0),
+              null,
+            ),
+            sizeSmall: TextStyle(fontSize: 9),
+          ),
+        ),
       );
     }
 
     // Toolbar definitions
     const toolbarIconSize = 18.0;
-    final embedButtons = FlutterQuillEmbeds.buttons(
-      // Showing only necessary default buttons
-      showCameraButton: false,
-      showFormulaButton: false,
-      showVideoButton: false,
-      showImageButton: true,
-
-      // `onImagePickCallback` is called after image is picked on mobile platforms
-      onImagePickCallback: _onImagePickCallback,
-
-      // `webImagePickImpl` is called after image is picked on the web 
-      webImagePickImpl: _webImagePickImpl,
-
-      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
-      mediaPickSettingSelector: (context) {
-        return Future.value(MediaPickSetting.Gallery);
-      },
-    );
+    const toolbarButtonSpacing = 2.5;
 
     // Instantiating the toolbar
-    final toolbar = QuillToolbar(
-      afterButtonPressed: _focusNode.requestFocus,
+    final toolbar = EditorToolbar(
       children: [
         HistoryButton(
+          buttonsSpacing: toolbarButtonSpacing,
           icon: Icons.undo_outlined,
           iconSize: toolbarIconSize,
           controller: _controller!,
-          undo: true,
+          isUndo: true,
         ),
         HistoryButton(
+          buttonsSpacing: toolbarButtonSpacing,
           icon: Icons.redo_outlined,
           iconSize: toolbarIconSize,
           controller: _controller!,
-          undo: false,
+          isUndo: false,
         ),
         ToggleStyleButton(
-          attribute: Attribute.bold,
+          buttonsSpacing: toolbarButtonSpacing,
+          attribute: AttributesM.bold,
           icon: Icons.format_bold,
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
         ToggleStyleButton(
-          attribute: Attribute.italic,
+          buttonsSpacing: toolbarButtonSpacing,
+          attribute: AttributesM.italic,
           icon: Icons.format_italic,
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
         ToggleStyleButton(
-          attribute: Attribute.underline,
+          buttonsSpacing: toolbarButtonSpacing,
+          attribute: AttributesM.underline,
           icon: Icons.format_underline,
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
         ToggleStyleButton(
-          attribute: Attribute.strikeThrough,
+          buttonsSpacing: toolbarButtonSpacing,
+          attribute: AttributesM.strikeThrough,
           icon: Icons.format_strikethrough,
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
-        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+
+        // Our embed buttons
+        ImageButton(
+          icon: Icons.image,
+          iconSize: toolbarIconSize,
+          buttonsSpacing: toolbarButtonSpacing,
+          controller: _controller!,
+          onImagePickCallback: _onImagePickCallback,
+          webImagePickImpl: _webImagePickImpl,
+          mediaPickSettingSelector: (context) {
+            return Future.value(MediaPickSettingE.Gallery);
+          },
+        )
       ],
     );
 
@@ -291,12 +228,12 @@ class HomePageState extends State<HomePage> {
   /// Renders the image picked by imagePicker from local file storage
   /// You can also upload the picked image to any server (eg : AWS s3
   /// or Firebase) and then return the uploaded image URL.
-  /// 
+  ///
   /// It's only called on mobile platforms.
   Future<String> _onImagePickCallback(File file) async {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
-      return copiedFile.path.toString();
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+    return copiedFile.path.toString();
   }
 
   /// Callback that is called after an image is picked whilst on the web platform.
@@ -323,8 +260,12 @@ class HomePageState extends State<HomePage> {
     const apiURL = 'https://imgup.fly.dev/api/images';
     final request = http.MultipartRequest('POST', Uri.parse(apiURL));
 
-    final httpImage = http.MultipartFile.fromBytes('image', bytes,
-        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name,);
+    final httpImage = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!),
+      filename: platformFile.name,
+    );
     request.files.add(httpImage);
 
     // Check the response and handle accordingly
