@@ -30,7 +30,8 @@ jobs:
       - name: Run tests
         run: flutter test --coverage
 
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         with:
           files: coverage/lcov.info
+          gcov_ignore: _visual-editor # excluding visual editor tests to not affect coverage
           verbose: true # optional (default = false)
