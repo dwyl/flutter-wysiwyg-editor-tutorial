@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
@@ -201,7 +200,7 @@ class HomePageState extends State<HomePage> {
           mediaPickSettingSelector: (context) {
             return Future.value(MediaPickSettingE.Gallery);
           },
-        )
+        ),
       ],
     );
 
