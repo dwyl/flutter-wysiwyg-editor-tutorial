@@ -1,16 +1,17 @@
-# Migrating `flutter-quill` to `visual-editor`
+# Migrating from `flutter-quill` to `visual-editor`
 
 > [!WARNING]
 >
 > At the time of writing,
-> `visual-editor` is still in development and **does not offer all the features `flutter-quill` offers**.
+> `visual-editor` is still in development and **does not offer all the features `flutter-quill` does**.
 > There are a few bugs that are noticeable (more specifically, text selection) 
 > that do not work properly on mobile devices.
 >
-> We will make a migration to a **fork of `visual-editor`** - https://github.com/LuchoTurtle/visual-editor.
+> We will use a **fork of `visual-editor`** - https://github.com/LuchoTurtle/visual-editor in this guide.
 > This is because the PR that was opened to `visual-editor` has need yet been merged
 > (https://github.com/visual-space/visual-editor/pull/237).
-> Once it is merged and this document has yet to be updated, 
+> Once it is merged, we'll update this dependency accordingly.
+> If you see that this PR has been merged and this document has yet to be updated, 
 > [please open an issue](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/issues/).
 
 
@@ -92,7 +93,7 @@ We'll deal with each issue along the way.
 Let's start with replacing the imports.
 Change the imports like so:
 
-`import 'package:flutter_quill/flutter_quill.dart';` -> `import 'package:visual_editor/visual-editor.dart';`
+> `import 'package:flutter_quill/flutter_quill.dart';` -> `import 'package:visual_editor/visual-editor.dart';`
 
 Add `import 'package:visual_editor/document/models/attributes/attributes.model.dart';`, as well.
 We are going to need it.
@@ -104,12 +105,12 @@ since it no longer exists.
 Now, it's time to rename some classes!
 Follow the next steps.
 
-`QuillEditor` -> `VisualEditor`
-`QuillController` -> `EditorController`
-`QuillToolbar` -> `EditorToolbar`
-`DefaultTextBlockStyle` -> `TextBlockStyleM`
-`DefaultStyles` -> `EditorStylesM`
-`Document` -> `DeltaDocM`
+> `QuillEditor` -> `VisualEditor`
+> `QuillController` -> `EditorController`
+> `QuillToolbar` -> `EditorToolbar`
+> `DefaultTextBlockStyle` -> `TextBlockStyleM`
+> `DefaultStyles` -> `EditorStylesM`
+> `Document` -> `DeltaDocM`
 
 Awesome!
 
