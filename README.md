@@ -42,6 +42,7 @@ in `Flutter` in a few easy steps.
     - [5.3 Change the `_onImagePickCallback` callback function](#53-change-the-_onimagepickcallback-callback-function)
   - [6. Give the app a whirl](#6-give-the-app-a-whirl)
 - [A note about testing 🧪](#a-note-about-testing-)
+- [Alternative editors](#alternative-editors)
 - [Found this useful?](#found-this-useful)
 
 
@@ -1807,6 +1808,26 @@ and `_webImagePickImpl`.
 It also includes custom web embeds, 
 which means the class `ImageEmbedBuilderWeb`
 is also not covered.
+
+# Alternative editors
+
+There are a myriad of alternative editors that you can use in Flutter.
+We've chosen this one because it offers us the option
+to get [`Delta` files](https://quilljs.com/docs/delta/), 
+which allows us to see text contents and changes throughout its lifetime.
+
+However, there are other editors that you may consider:
+- [`super_editor`](https://pub.dev/packages/super_editor)
+- [`appflowy_editor`](https://github.com/AppFlowy-IO/appflowy-editor)
+- [`visual-editor`](https://github.com/visual-space/visual-editor) (a fork of `flutter-quill`)
+
+We've created a specific folder that will help you migrate
+the code you've *just implemented* 
+from `flutter-quill` to `visual-editor`.
+
+You can check the finished migrated application
+and the guide in [`_visual-editor`](./_visual-editor/).
+
 
 # Found this useful?
 
