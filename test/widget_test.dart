@@ -7,7 +7,9 @@
 
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:visual_editor/visual-editor.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
+import 'package:flutter_quill/flutter_quill_test.dart';
 
 import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
@@ -43,7 +45,8 @@ void mockImagePicker(WidgetTester tester) {
     }
   }
 
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (message) {
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+      (message) {
     return handler(message);
   });
 }
@@ -72,8 +75,8 @@ void main() {
     expect(find.text('Flutter Quill'), findsOneWidget);
 
     // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(VisualEditor));
-    await tester.enterText(find.byType(VisualEditor), 'hi\n');
+    await tester.tap(find.byType(QuillEditor));
+    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
     await tester.pumpAndSettle();
   });
 
@@ -98,8 +101,8 @@ void main() {
     expect(find.text('Flutter Quill'), findsOneWidget);
 
     // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(VisualEditor));
-    await tester.enterText(find.byType(VisualEditor), 'hi\n');
+    await tester.tap(find.byType(QuillEditor));
+    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
     await tester.pumpAndSettle();
 
     final imageButton = find.byType(ImageButton);
@@ -127,8 +130,8 @@ void main() {
     expect(find.text('Flutter Quill'), findsOneWidget);
 
     // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(VisualEditor));
-    await tester.enterText(find.byType(VisualEditor), 'hi\n');
+    await tester.tap(find.byType(QuillEditor));
+    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
     await tester.pumpAndSettle();
   });
 }
