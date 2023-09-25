@@ -41,6 +41,8 @@ in `Flutter` in a few easy steps.
     - [5.2 Change the `_webImagePickImpl` callback function](#52-change-the-_webimagepickimpl-callback-function)
     - [5.3 Change the `_onImagePickCallback` callback function](#53-change-the-_onimagepickcallback-callback-function)
   - [6. Give the app a whirl](#6-give-the-app-a-whirl)
+  - [7. Extending our `toolbar`](#7-extending-our-toolbar)
+    - [7.1 Header font sizes](#71-header-font-sizes)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Found this useful?](#found-this-useful)
 
@@ -1767,6 +1769,132 @@ for this.
 > interpreting your changed `Info.plist` file.
 >
 > ![xcode](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/49274c28-2e1a-4dca-9195-73160a6f936f)
+
+
+## 7. Extending our `toolbar`
+
+As it stands, our toolbar offers limited options.
+We want it to do more! 
+Let's add these features so the person using our app
+is free to customize the text further 😊.
+
+
+### 7.1 Header font sizes
+
+Let's start by adding different **header font sizes**.
+This will allow the person to better organize their items.
+We will provide three different headers (`h1`, `h2` and `h3`),
+each one with decreasing sizes and vertical spacings.
+
+These subheadings will be toggleable from the toolbar.
+
+Let's add the buttons to the toolbar.
+Locate the `toolbar` variable (with type `QuillToolbar`)
+inside the `_buildEditor()` function.
+
+In the `children` parameter, 
+add the [`SelectHeaderStyleButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/select_header_style_button.dart#L11)
+after the `HistoryButton`s. 
+Like so:
+
+```dart
+final toolbar = QuillToolbar(
+  afterButtonPressed: _focusNode.requestFocus,
+  children: [
+    HistoryButton(
+      icon: Icons.undo_outlined,
+      iconSize: toolbarIconSize,
+      controller: _controller!,
+      undo: true,
+    ),
+    HistoryButton(
+      icon: Icons.redo_outlined,
+      iconSize: toolbarIconSize,
+      controller: _controller!,
+      undo: false,
+    ),
+
+    // Add this button
+    SelectHeaderStyleButton(
+      controller: _controller!,
+      axis: Axis.horizontal,
+      iconSize: toolbarIconSize,
+      attributes: const [Attribute.h1, Attribute.h2, Attribute.h3],
+    ),
+
+    //  rest of the buttons
+  ]
+)
+```
+
+With this button, we will be able to define the subheadings
+we want to make available to the person.
+The `axis` parameter defines whether they should be sorted
+horizontally or vertically.
+The `attributes` field defines how many subheadings we want to add.
+In our case, we'll just define three.
+
+Now we need to **define the styling for the headings**.
+For this, we need to change the `customStyles` field
+of the `quillEditor` variable 
+(from the [`QuillEditor`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/editor.dart#L149) class )
+inside `_buildEditor()`.
+
+We are going to make these changes to both
+mobile and web `quillEditor` variables.
+Locate them at check the `customStyles` field.
+Change it to the following:
+
+```dart
+customStyles: DefaultStyles(
+        // Change these -------------
+        h1: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 32,
+            color: Colors.black,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h2: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 24,
+            color: Colors.black87,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h3: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 20,
+            color: Colors.black87,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        // Change these -------------
+        // ....
+),
+```
+
+We have changed the pre-existing `h1` field
+and added the `h2` and `h3` fields as well,
+specifying different font weights and sizes and colour
+for each subheading.
+
+And that's it!
+That's all you need to do to change the subheadings!
+
+Awesome job! 👏
 
 
 # A note about testing 🧪
