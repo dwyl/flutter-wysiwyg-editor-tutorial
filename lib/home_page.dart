@@ -151,9 +151,31 @@ class HomePageState extends State<HomePage> {
             fontSize: 32,
             color: Colors.black,
             height: 1.15,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w600,
           ),
           const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h2: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 24,
+            color: Colors.black87,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h3: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 20,
+            color: Colors.black87,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
           const VerticalSpacing(0, 0),
           null,
         ),
@@ -191,9 +213,31 @@ class HomePageState extends State<HomePage> {
               fontSize: 32,
               color: Colors.black,
               height: 1.15,
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w600,
             ),
             const VerticalSpacing(16, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          h2: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 24,
+              color: Colors.black87,
+              height: 1.15,
+              fontWeight: FontWeight.w600,
+            ),
+            const VerticalSpacing(8, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          h3: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 20,
+              color: Colors.black87,
+              height: 1.25,
+              fontWeight: FontWeight.w600,
+            ),
+            const VerticalSpacing(8, 0),
             const VerticalSpacing(0, 0),
             null,
           ),
@@ -215,7 +259,7 @@ class HomePageState extends State<HomePage> {
       // `onImagePickCallback` is called after image is picked on mobile platforms
       onImagePickCallback: _onImagePickCallback,
 
-      // `webImagePickImpl` is called after image is picked on the web 
+      // `webImagePickImpl` is called after image is picked on the web
       webImagePickImpl: _webImagePickImpl,
 
       // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
@@ -239,6 +283,12 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
           undo: false,
+        ),
+        SelectHeaderStyleButton(
+          controller: _controller!,
+          axis: Axis.horizontal,
+          iconSize: toolbarIconSize,
+          attributes: const [Attribute.h1, Attribute.h2, Attribute.h3],
         ),
         ToggleStyleButton(
           attribute: Attribute.bold,
@@ -291,12 +341,12 @@ class HomePageState extends State<HomePage> {
   /// Renders the image picked by imagePicker from local file storage
   /// You can also upload the picked image to any server (eg : AWS s3
   /// or Firebase) and then return the uploaded image URL.
-  /// 
+  ///
   /// It's only called on mobile platforms.
   Future<String> _onImagePickCallback(File file) async {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
-      return copiedFile.path.toString();
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+    return copiedFile.path.toString();
   }
 
   /// Callback that is called after an image is picked whilst on the web platform.
@@ -323,8 +373,12 @@ class HomePageState extends State<HomePage> {
     const apiURL = 'https://imgup.fly.dev/api/images';
     final request = http.MultipartRequest('POST', Uri.parse(apiURL));
 
-    final httpImage = http.MultipartFile.fromBytes('image', bytes,
-        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name,);
+    final httpImage = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!),
+      filename: platformFile.name,
+    );
     request.files.add(httpImage);
 
     // Check the response and handle accordingly
