@@ -2,15 +2,11 @@ import 'package:app/emoji_picker_widget.dart';
 import 'package:app/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
-import 'package:flutter_quill/flutter_quill_test.dart';
 
 import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:flutter/services.dart';
 
 // importing mocks
 import 'widget_test.mocks.dart';
