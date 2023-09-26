@@ -43,6 +43,7 @@ in `Flutter` in a few easy steps.
   - [6. Give the app a whirl](#6-give-the-app-a-whirl)
   - [7. Extending our `toolbar`](#7-extending-our-toolbar)
     - [7.1 Header font sizes](#71-header-font-sizes)
+    - [7.2 Adding emojis](#72-adding-emojis)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Found this useful?](#found-this-useful)
 
@@ -1895,6 +1896,261 @@ And that's it!
 That's all you need to do to change the subheadings!
 
 Awesome job! 👏
+
+
+### 7.2 Adding emojis
+
+Let's add a button that will allow people to add emojis!
+This is useful for both mobile and web platforms 
+(it's more relevant on the latter,
+as there is not a native emoji keyboard to choose from).
+
+You might be wondering that, for mobile applications,
+having a dedicated button to insert emojis is *redudant*,
+because iOS and Android devices offer a native keyboard
+in which you can select an emoji and insert it as text.
+
+However, we're doing this for two purposes:
+- the emoji button is meant to be introduced as a separate feature
+and as a custom button to be shown.
+See https://github.com/dwyl/app/issues/275#issuecomment-1646862277 for more context.
+- showing the native keyboard emoji selection does not work on all platforms in Flutter.
+If this was the case, we could have easily used a package
+like [`keyboard_emoji_picker`](https://pub.dev/packages/keyboard_emoji_picker).
+
+So let's do this!
+
+First, let's install the package we'll use
+to select emojis.
+Simply run `flutter pub add emoji_picker_flutter` 
+and all the dependencies will be installed.
+
+Now that's done with, let's start by creating our emoji picker.
+Let's first create our widget in a separate file.
+Inside `lib`, 
+create a file called `emoji_picker_widget.dart`.
+
+```dart
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+
+/// Emoji picker widget that is offstage.
+/// Shows an emoji picker when [offstageEmojiPicker] is `false`.
+class OffstageEmojiPicker extends StatefulWidget {
+  /// `QuillController` controller that is passed so the controller document is changed when emojis are inserted.
+  final QuillController? quillController;
+
+  /// Determines if the emoji picker is offstage or not.
+  final bool offstageEmojiPicker;
+
+  const OffstageEmojiPicker({required this.offstageEmojiPicker, this.quillController, super.key});
+
+  @override
+  State<OffstageEmojiPicker> createState() => _OffstageEmojiPickerState();
+}
+
+class _OffstageEmojiPickerState extends State<OffstageEmojiPicker> {
+  /// Returns the emoji picker configuration according to screen size.
+  Config _buildEmojiPickerConfig(BuildContext context) {
+    if (ResponsiveBreakpoints.of(context).smallerOrEqualTo(MOBILE)) {
+      return const Config(emojiSizeMax: 32.0, columns: 7);
+    }
+
+    if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
+      return const Config(emojiSizeMax: 24.0, columns: 10);
+    }
+
+    if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
+      return const Config(emojiSizeMax: 16.0, columns: 15);
+    }
+
+    return const Config(emojiSizeMax: 16.0, columns: 30);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Offstage(
+      offstage: widget.offstageEmojiPicker,
+      child: SizedBox(
+        height: 250,
+        child: EmojiPicker(
+          onEmojiSelected: (category, emoji) {
+            if (widget.quillController != null) {
+              // Get pointer selection and insert emoji there
+              final selection = widget.quillController?.selection;
+              widget.quillController?.document.insert(selection!.end, emoji.emoji);
+
+              // Update the pointer after the emoji we've just inserted
+              widget.quillController?.updateSelection(TextSelection.collapsed(offset: selection!.end + emoji.emoji.length), ChangeSource.REMOTE);
+            }
+          },
+          config: _buildEmojiPickerConfig(context),
+        ),
+      ),
+    );
+  }
+}
+```
+
+Let's unpack what we've just implemented.
+The widget we've create is a **stateful widget**
+that receives two parameters:
+
+- `quillController` pertains to the `QuillController` 
+object related ot the editor.
+This controller is used to access the document
+so the emoji can be inserted.
+- `offstageEmojiPicker` is a boolean
+that determines if the widget is meant to be offstage (hidden)
+or not.
+
+In the `build()` function,
+we use the [`Offstage`](https://api.flutter.dev/flutter/widgets/Offstage-class.html)
+class to wrap the widget.
+This will make it possible to show and hide the emoji picker accordingly.
+
+We then use the `EmojiPicker` widget
+from the package we've just downloaded.
+In this widget, we define two parameters:
+
+- `config`, pertaining to the emoji picker configuration.
+We use the `_buildEmojiPickerConfig()` function
+to conditionally change the emoji picker dimensions
+according to the size of the screen.
+- `onEmojiSelected`, which is called after an emoji is selected by the person.
+In this, we use the passed `quillController` to get the position 
+of the pointer and the document.
+With these two, we add the selected emoji
+and update the pointer to *after* the emoji that was inserted.
+This will allow adding consecutive emojis properly
+and maintain the pointer index aligned.
+
+Now all that's left is to
+**use our newly created widget** in our homepage!
+Head over to `lib/home_page.dart`,
+and add a new field inside `HomePageState`.
+
+```dart
+  /// Show emoji picker
+  bool _offstageEmojiPickerOffstage = true;
+```
+
+In the same class,
+we're going to create a callback function
+that is to be called every time the person 
+clicks on the emoji toolbar button 
+(don't worry, we'll create this button in a minute).
+This function will close the keyboard
+and open the emoji picker widget we've just created.
+
+```dart
+  void _onEmojiButtonPressed(BuildContext context) {
+    final isEmojiPickerShown = !_offstageEmojiPickerOffstage;
+
+    // If emoji picker is being shown, we show the keyboard and hide the emoji picker.
+    if (isEmojiPickerShown) {
+      _focusNode.requestFocus();
+      setState(() {
+        _offstageEmojiPickerOffstage = true;
+      });
+    }
+
+    // Otherwise, we do the inverse.
+    else {
+      // Unfocusing when the person clicks away. This is to hide the keyboard.
+      // See https://flutterigniter.com/dismiss-keyboard-form-lose-focus/
+      // and https://www.youtube.com/watch?v=MKrEJtheGPk&t=40s&ab_channel=HeyFlutter%E2%80%A4com.
+      final currentFocus = FocusScope.of(context);
+      if (!currentFocus.hasPrimaryFocus) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      }
+
+      setState(() {
+        _offstageEmojiPickerOffstage = false;
+      });
+    }
+  }
+```
+
+We are toggling the `_offstageEmojiPickerOffstage` field
+by calling `setState()`, thus causing a re-render
+and properly toggling the emoji picker.
+
+Now all we need to do is
+**add the button to the toolbar to toggle the emoji picker**
+and **add the offstage emoji picker to the widget tree**.
+
+Let's do the first one.
+Locate `_buildEditor` and find the `toolbar` 
+(class `QuillToolbar`) definition.
+In the `children` parameter,
+we're going to add a 
+[`CustomButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/custom_button.dart#L6)
+to these buttons.
+
+```dart
+final toolbar = QuillToolbar(
+  afterButtonPressed: _focusNode.requestFocus,
+  children: [
+    CustomButton(
+      onPressed: () => _onEmojiButtonPressed(context),
+      icon: Icons.emoji_emotions,
+      iconSize: toolbarIconSize,
+    ),
+
+    // Other buttons...
+  ]
+)
+```
+
+As you can see, we are calling the `_onEmojiButtonPressed` function
+we've implemented every time the person taps on the emoji button.
+
+At the end of the function, we're going to return
+the editor with the `OffstageEmojiPicker` widget
+we've initially created.
+
+```dart
+    return SafeArea(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 15,
+            child: Container(
+              key: quillEditorKey,
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 16, right: 16),
+              child: quillEditor,
+            ),
+          ),
+          Container(child: toolbar),
+
+          // Add this ---
+          OffstageEmojiPicker(
+            offstageEmojiPicker: _offstageEmojiPickerOffstage,
+            quillController: _controller,
+          ),
+        ],
+      ),
+    );
+```
+
+And that's it!
+We've just successfully added an emoji picker
+that is correctly toggled when clicking the appropriate button in the toolbar,
+*and* adding the correct changes to the Delta document of the Quill editor.
+
+
+<p align="center">
+  <img width="300" src="https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/e5cc28fe-5ddf-43da-a820-e369a7622471" />
+</p>
+
+
+
+
 
 
 # A note about testing 🧪

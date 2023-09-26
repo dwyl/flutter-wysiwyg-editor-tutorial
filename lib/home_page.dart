@@ -385,7 +385,7 @@ class HomePageState extends State<HomePage> {
           ),
           Container(child: toolbar),
           OffstageEmojiPicker(
-            offstageEmojiPickerOffstage: _offstageEmojiPickerOffstage,
+            offstageEmojiPicker: _offstageEmojiPickerOffstage,
             quillController: _controller,
           ),
         ],

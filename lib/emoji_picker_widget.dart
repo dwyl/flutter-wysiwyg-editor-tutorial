@@ -1,20 +1,18 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 /// Emoji picker widget that is offstage.
-/// Shows an emoji picker when [offstageEmojiPickerOffstage] is `false`.
+/// Shows an emoji picker when [offstageEmojiPicker] is `false`.
 class OffstageEmojiPicker extends StatefulWidget {
-
   /// `QuillController` controller that is passed so the controller document is changed when emojis are inserted.
   final QuillController? quillController;
 
   /// Determines if the emoji picker is offstage or not.
-  final bool offstageEmojiPickerOffstage;
+  final bool offstageEmojiPicker;
 
-  const OffstageEmojiPicker({required this.offstageEmojiPickerOffstage, this.quillController, super.key});
+  const OffstageEmojiPicker({required this.offstageEmojiPicker, this.quillController, super.key});
 
   @override
   State<OffstageEmojiPicker> createState() => _OffstageEmojiPickerState();
@@ -41,7 +39,7 @@ class _OffstageEmojiPickerState extends State<OffstageEmojiPicker> {
   @override
   Widget build(BuildContext context) {
     return Offstage(
-      offstage: widget.offstageEmojiPickerOffstage,
+      offstage: widget.offstageEmojiPicker,
       child: SizedBox(
         height: 250,
         child: EmojiPicker(
