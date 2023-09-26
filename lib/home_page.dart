@@ -365,6 +365,11 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
+        LinkStyleButton(
+          controller: _controller!,
+          iconSize: toolbarIconSize,
+          linkRegExp: RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'),
+        ),
         for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
       ],
     );
