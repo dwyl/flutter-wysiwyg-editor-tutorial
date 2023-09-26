@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -14,6 +15,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:flutter/foundation.dart' as foundation;
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 
 import 'web_embeds/web_embeds.dart';
 
@@ -47,6 +51,9 @@ class HomePageState extends State<HomePage> {
 
   /// Selection types for triple clicking
   _SelectionType _selectionType = _SelectionType.none;
+
+  /// Show emoji picker
+  bool _offstageEmojiPickerOffstage = true;
 
   @override
   void initState() {
@@ -128,6 +135,54 @@ class HomePageState extends State<HomePage> {
     return false;
   }
 
+  /// Callback called whenever the person taps on the emoji button in the toolbar.
+  /// It shows/hides the emoji picker and focus/unfocusses the keyboard accordingly.
+  void _onEmojiButtonPressed(BuildContext context) {
+    final isEmojiPickerShown = !_offstageEmojiPickerOffstage;
+
+    // If emoji picker is being shown, we show the keyboard and hide the emoji picker.
+    if (isEmojiPickerShown) {
+      _focusNode.requestFocus();
+      setState(() {
+        _offstageEmojiPickerOffstage = true;
+      });
+    }
+
+    // Otherwise, we do the inverse.
+    else {
+      // Unfocusing when the person clicks away. This is to hide the keyboard.
+      // See https://flutterigniter.com/dismiss-keyboard-form-lose-focus/
+      // and https://www.youtube.com/watch?v=MKrEJtheGPk&t=40s&ab_channel=HeyFlutter%E2%80%A4com.
+      final currentFocus = FocusScope.of(context);
+      if (!currentFocus.hasPrimaryFocus) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+        //currentFocus.unfocus();
+      }
+
+      setState(() {
+        _offstageEmojiPickerOffstage = false;
+      });
+    }
+  }
+
+
+  /// Returns the emoji picker configuration according to screen size.
+  Config _buildEmojiPickerConfig(BuildContext context) {
+    if (ResponsiveBreakpoints.of(context).smallerOrEqualTo(MOBILE)) {
+      return const Config(emojiSizeMax: 32.0, columns: 7);
+    } 
+    
+    if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
+      return const Config(emojiSizeMax: 24.0, columns: 10);
+    } 
+    
+   if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
+      return const Config(emojiSizeMax: 16.0, columns: 15);
+    } 
+    
+    return const Config(emojiSizeMax: 16.0, columns: 30);
+  }
+
   /// Build the `flutter-quill` editor to be shown on screen.
   Widget _buildEditor(BuildContext context) {
     // Default editor (for mobile devices)
@@ -142,6 +197,14 @@ class HomePageState extends State<HomePage> {
       enableSelectionToolbar: isMobile(),
       expands: false,
       padding: EdgeInsets.zero,
+      onTapDown: (details, p1) {
+        // When the person taps on the text, we want to hide the emoji picker
+        // so only the keyboard is shown
+        setState(() {
+          _offstageEmojiPickerOffstage = true;
+        });
+        return false;
+      },
       onTapUp: (details, p1) {
         return _onTripleClickSelection();
       },
@@ -272,6 +335,11 @@ class HomePageState extends State<HomePage> {
     final toolbar = QuillToolbar(
       afterButtonPressed: _focusNode.requestFocus,
       children: [
+        CustomButton(
+          onPressed: () => _onEmojiButtonPressed(context),
+          icon: Icons.emoji_emotions,
+          iconSize: toolbarIconSize,
+        ),
         HistoryButton(
           icon: Icons.undo_outlined,
           iconSize: toolbarIconSize,
@@ -333,6 +401,25 @@ class HomePageState extends State<HomePage> {
             ),
           ),
           Container(child: toolbar),
+          Offstage(
+            offstage: _offstageEmojiPickerOffstage,
+            child: SizedBox(
+              height: 250,
+              child: EmojiPicker(
+                onEmojiSelected: (category, emoji) {
+                  if (_controller != null) {
+                    // Get pointer selection and insert emoji there
+                    final selection = _controller?.selection;
+                    _controller?.document.insert(selection!.end, emoji.emoji);
+
+                    // Update the pointer after the emoji we've just inserted
+                    _controller?.updateSelection(TextSelection.collapsed(offset: selection!.end + emoji.emoji.length), ChangeSource.REMOTE);
+                  }
+                },
+                config: _buildEmojiPickerConfig(context),
+              ),
+            ),
+          ),
         ],
       ),
     );
