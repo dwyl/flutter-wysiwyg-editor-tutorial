@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
+const emojiPickerWidgetKey = Key('emojiPickerWidgetKey');
+
 /// Emoji picker widget that is offstage.
 /// Shows an emoji picker when [offstageEmojiPicker] is `false`.
 class OffstageEmojiPicker extends StatefulWidget {
@@ -43,6 +45,7 @@ class _OffstageEmojiPickerState extends State<OffstageEmojiPicker> {
       child: SizedBox(
         height: 250,
         child: EmojiPicker(
+          key: emojiPickerWidgetKey,
           onEmojiSelected: (category, emoji) {
             if (widget.quillController != null) {
               // Get pointer selection and insert emoji there

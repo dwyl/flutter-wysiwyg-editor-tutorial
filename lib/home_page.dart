@@ -16,13 +16,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
-import 'package:flutter/foundation.dart' as foundation;
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 
 import 'web_embeds/web_embeds.dart';
 
 const quillEditorKey = Key('quillEditorKey');
+const emojiButtonKey = Key('emojiButtonKey');
+
 
 /// Types of selection that person can make when triple clicking
 enum _SelectionType {
@@ -319,6 +318,7 @@ class HomePageState extends State<HomePage> {
       afterButtonPressed: _focusNode.requestFocus,
       children: [
         CustomButton(
+          key: emojiButtonKey,
           onPressed: () => _onEmojiButtonPressed(context),
           icon: Icons.emoji_emotions,
           iconSize: toolbarIconSize,
