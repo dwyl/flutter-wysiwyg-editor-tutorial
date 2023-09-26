@@ -44,6 +44,7 @@ in `Flutter` in a few easy steps.
   - [7. Extending our `toolbar`](#7-extending-our-toolbar)
     - [7.1 Header font sizes](#71-header-font-sizes)
     - [7.2 Adding emojis](#72-adding-emojis)
+    - [7.3 Adding embeddable links](#73-adding-embeddable-links)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Found this useful?](#found-this-useful)
 
@@ -2149,8 +2150,42 @@ that is correctly toggled when clicking the appropriate button in the toolbar,
 </p>
 
 
+### 7.3 Adding embeddable links
 
+This one's the easiest.
+`flutter-quill` already provides a specific button
+which we can invoke that'll do all the work for us,
+including formatting, embedding the link
+and properly adding the change to the controller's document.
 
+Simply add the following snippet of code
+to the `children` field of the `toolbar`
+variable you've worked with earlier.
+
+```dart
+       // ....
+       ToggleStyleButton(
+          attribute: Attribute.strikeThrough,
+          icon: Icons.format_strikethrough,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+
+        // Add this button
+        LinkStyleButton(
+          controller: _controller!,
+          iconSize: toolbarIconSize,
+          linkRegExp: RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'),
+        ),
+
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+```
+
+And that's it! 
+We're using the 
+[`LinkStyleButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/link_style_button.dart#L13)
+class with a regular expression that we've defined ourselves
+that will only allow a link to be added if it's valid.
 
 
 # A note about testing 🧪
