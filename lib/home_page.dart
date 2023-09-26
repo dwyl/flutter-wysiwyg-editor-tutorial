@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:app/emoji_picker_widget.dart';
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -163,24 +164,6 @@ class HomePageState extends State<HomePage> {
         _offstageEmojiPickerOffstage = false;
       });
     }
-  }
-
-
-  /// Returns the emoji picker configuration according to screen size.
-  Config _buildEmojiPickerConfig(BuildContext context) {
-    if (ResponsiveBreakpoints.of(context).smallerOrEqualTo(MOBILE)) {
-      return const Config(emojiSizeMax: 32.0, columns: 7);
-    } 
-    
-    if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
-      return const Config(emojiSizeMax: 24.0, columns: 10);
-    } 
-    
-   if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
-      return const Config(emojiSizeMax: 16.0, columns: 15);
-    } 
-    
-    return const Config(emojiSizeMax: 16.0, columns: 30);
   }
 
   /// Build the `flutter-quill` editor to be shown on screen.
@@ -401,24 +384,9 @@ class HomePageState extends State<HomePage> {
             ),
           ),
           Container(child: toolbar),
-          Offstage(
-            offstage: _offstageEmojiPickerOffstage,
-            child: SizedBox(
-              height: 250,
-              child: EmojiPicker(
-                onEmojiSelected: (category, emoji) {
-                  if (_controller != null) {
-                    // Get pointer selection and insert emoji there
-                    final selection = _controller?.selection;
-                    _controller?.document.insert(selection!.end, emoji.emoji);
-
-                    // Update the pointer after the emoji we've just inserted
-                    _controller?.updateSelection(TextSelection.collapsed(offset: selection!.end + emoji.emoji.length), ChangeSource.REMOTE);
-                  }
-                },
-                config: _buildEmojiPickerConfig(context),
-              ),
-            ),
+          OffstageEmojiPicker(
+            offstageEmojiPickerOffstage: _offstageEmojiPickerOffstage,
+            quillController: _controller,
           ),
         ],
       ),
