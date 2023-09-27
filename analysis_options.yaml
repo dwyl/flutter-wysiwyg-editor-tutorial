@@ -11,7 +11,7 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   exclude:
-    - alt_visual-editor/**
+    - alt_visual_editor/**
 
 linter:
   # The lint rules applied to this project can be customized in the
