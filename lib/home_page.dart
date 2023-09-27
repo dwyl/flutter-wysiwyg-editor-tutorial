@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:app/emoji_picker_widget.dart';
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -18,6 +20,8 @@ import 'package:http_parser/http_parser.dart';
 import 'web_embeds/web_embeds.dart';
 
 const quillEditorKey = Key('quillEditorKey');
+const emojiButtonKey = Key('emojiButtonKey');
+
 
 /// Types of selection that person can make when triple clicking
 enum _SelectionType {
@@ -47,6 +51,9 @@ class HomePageState extends State<HomePage> {
 
   /// Selection types for triple clicking
   _SelectionType _selectionType = _SelectionType.none;
+
+  /// Show emoji picker
+  bool _offstageEmojiPickerOffstage = true;
 
   @override
   void initState() {
@@ -128,6 +135,36 @@ class HomePageState extends State<HomePage> {
     return false;
   }
 
+  /// Callback called whenever the person taps on the emoji button in the toolbar.
+  /// It shows/hides the emoji picker and focus/unfocusses the keyboard accordingly.
+  void _onEmojiButtonPressed(BuildContext context) {
+    final isEmojiPickerShown = !_offstageEmojiPickerOffstage;
+
+    // If emoji picker is being shown, we show the keyboard and hide the emoji picker.
+    if (isEmojiPickerShown) {
+      _focusNode.requestFocus();
+      setState(() {
+        _offstageEmojiPickerOffstage = true;
+      });
+    }
+
+    // Otherwise, we do the inverse.
+    else {
+      // Unfocusing when the person clicks away. This is to hide the keyboard.
+      // See https://flutterigniter.com/dismiss-keyboard-form-lose-focus/
+      // and https://www.youtube.com/watch?v=MKrEJtheGPk&t=40s&ab_channel=HeyFlutter%E2%80%A4com.
+      final currentFocus = FocusScope.of(context);
+      if (!currentFocus.hasPrimaryFocus) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+        //currentFocus.unfocus();
+      }
+
+      setState(() {
+        _offstageEmojiPickerOffstage = false;
+      });
+    }
+  }
+
   /// Build the `flutter-quill` editor to be shown on screen.
   Widget _buildEditor(BuildContext context) {
     // Default editor (for mobile devices)
@@ -142,6 +179,14 @@ class HomePageState extends State<HomePage> {
       enableSelectionToolbar: isMobile(),
       expands: false,
       padding: EdgeInsets.zero,
+      onTapDown: (details, p1) {
+        // When the person taps on the text, we want to hide the emoji picker
+        // so only the keyboard is shown
+        setState(() {
+          _offstageEmojiPickerOffstage = true;
+        });
+        return false;
+      },
       onTapUp: (details, p1) {
         return _onTripleClickSelection();
       },
@@ -151,9 +196,31 @@ class HomePageState extends State<HomePage> {
             fontSize: 32,
             color: Colors.black,
             height: 1.15,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w600,
           ),
           const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h2: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 24,
+            color: Colors.black87,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h3: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 20,
+            color: Colors.black87,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
           const VerticalSpacing(0, 0),
           null,
         ),
@@ -191,9 +258,31 @@ class HomePageState extends State<HomePage> {
               fontSize: 32,
               color: Colors.black,
               height: 1.15,
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w600,
             ),
             const VerticalSpacing(16, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          h2: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 24,
+              color: Colors.black87,
+              height: 1.15,
+              fontWeight: FontWeight.w600,
+            ),
+            const VerticalSpacing(8, 0),
+            const VerticalSpacing(0, 0),
+            null,
+          ),
+          h3: DefaultTextBlockStyle(
+            const TextStyle(
+              fontSize: 20,
+              color: Colors.black87,
+              height: 1.25,
+              fontWeight: FontWeight.w600,
+            ),
+            const VerticalSpacing(8, 0),
             const VerticalSpacing(0, 0),
             null,
           ),
@@ -215,7 +304,7 @@ class HomePageState extends State<HomePage> {
       // `onImagePickCallback` is called after image is picked on mobile platforms
       onImagePickCallback: _onImagePickCallback,
 
-      // `webImagePickImpl` is called after image is picked on the web 
+      // `webImagePickImpl` is called after image is picked on the web
       webImagePickImpl: _webImagePickImpl,
 
       // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
@@ -228,6 +317,12 @@ class HomePageState extends State<HomePage> {
     final toolbar = QuillToolbar(
       afterButtonPressed: _focusNode.requestFocus,
       children: [
+        CustomButton(
+          key: emojiButtonKey,
+          onPressed: () => _onEmojiButtonPressed(context),
+          icon: Icons.emoji_emotions,
+          iconSize: toolbarIconSize,
+        ),
         HistoryButton(
           icon: Icons.undo_outlined,
           iconSize: toolbarIconSize,
@@ -239,6 +334,12 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
           undo: false,
+        ),
+        SelectHeaderStyleButton(
+          controller: _controller!,
+          axis: Axis.horizontal,
+          iconSize: toolbarIconSize,
+          attributes: const [Attribute.h1, Attribute.h2, Attribute.h3],
         ),
         ToggleStyleButton(
           attribute: Attribute.bold,
@@ -264,6 +365,11 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           controller: _controller!,
         ),
+        LinkStyleButton(
+          controller: _controller!,
+          iconSize: toolbarIconSize,
+          linkRegExp: RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'),
+        ),
         for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
       ],
     );
@@ -283,6 +389,10 @@ class HomePageState extends State<HomePage> {
             ),
           ),
           Container(child: toolbar),
+          OffstageEmojiPicker(
+            offstageEmojiPicker: _offstageEmojiPickerOffstage,
+            quillController: _controller,
+          ),
         ],
       ),
     );
@@ -291,12 +401,12 @@ class HomePageState extends State<HomePage> {
   /// Renders the image picked by imagePicker from local file storage
   /// You can also upload the picked image to any server (eg : AWS s3
   /// or Firebase) and then return the uploaded image URL.
-  /// 
+  ///
   /// It's only called on mobile platforms.
   Future<String> _onImagePickCallback(File file) async {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
-      return copiedFile.path.toString();
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+    return copiedFile.path.toString();
   }
 
   /// Callback that is called after an image is picked whilst on the web platform.
@@ -323,8 +433,12 @@ class HomePageState extends State<HomePage> {
     const apiURL = 'https://imgup.fly.dev/api/images';
     final request = http.MultipartRequest('POST', Uri.parse(apiURL));
 
-    final httpImage = http.MultipartFile.fromBytes('image', bytes,
-        contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!), filename: platformFile.name,);
+    final httpImage = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!),
+      filename: platformFile.name,
+    );
     request.files.add(httpImage);
 
     // Check the response and handle accordingly
