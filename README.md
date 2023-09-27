@@ -2245,7 +2245,7 @@ the code you've *just implemented*
 from `flutter-quill` to `visual-editor`.
 
 You can check the finished migrated application
-and the guide in [`_visual-editor`](./_visual-editor/).
+and the guide in [`alt_visual-editor`](./alt_visual_editor/).
 
 
 # Found this useful?
