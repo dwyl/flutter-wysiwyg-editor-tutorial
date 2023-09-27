@@ -35,7 +35,12 @@ from the app you've just implemented with `flutter-quill`.
 This guide builds upon the app that was created in 
 [`README.md`](../README.md).
 Make sure you have completed the tutorial first
+until the [`6. Give the app a whirl`](README.md#6-give-the-app-a-whirl) chapter
 and head back here so the code is in the same state.
+
+If you've completed the rest of the chapters,
+it's okay! 
+There principles are still the same 🙂.
 
 
 # 1. Install dependencies
