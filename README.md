@@ -41,6 +41,10 @@ in `Flutter` in a few easy steps.
     - [5.2 Change the `_webImagePickImpl` callback function](#52-change-the-_webimagepickimpl-callback-function)
     - [5.3 Change the `_onImagePickCallback` callback function](#53-change-the-_onimagepickcallback-callback-function)
   - [6. Give the app a whirl](#6-give-the-app-a-whirl)
+  - [7. Extending our `toolbar`](#7-extending-our-toolbar)
+    - [7.1 Header font sizes](#71-header-font-sizes)
+    - [7.2 Adding emojis](#72-adding-emojis)
+    - [7.3 Adding embeddable links](#73-adding-embeddable-links)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Alternative editors](#alternative-editors)
 - [Found this useful?](#found-this-useful)
@@ -1768,6 +1772,421 @@ for this.
 > interpreting your changed `Info.plist` file.
 >
 > ![xcode](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/49274c28-2e1a-4dca-9195-73160a6f936f)
+
+
+## 7. Extending our `toolbar`
+
+As it stands, our toolbar offers limited options.
+We want it to do more! 
+Let's add these features so the person using our app
+is free to customize the text further 😊.
+
+
+### 7.1 Header font sizes
+
+Let's start by adding different **header font sizes**.
+This will allow the person to better organize their items.
+We will provide three different headers (`h1`, `h2` and `h3`),
+each one with decreasing sizes and vertical spacings.
+
+These subheadings will be toggleable from the toolbar.
+
+Let's add the buttons to the toolbar.
+Locate the `toolbar` variable (with type `QuillToolbar`)
+inside the `_buildEditor()` function.
+
+In the `children` parameter, 
+add the [`SelectHeaderStyleButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/select_header_style_button.dart#L11)
+after the `HistoryButton`s. 
+Like so:
+
+```dart
+final toolbar = QuillToolbar(
+  afterButtonPressed: _focusNode.requestFocus,
+  children: [
+    HistoryButton(
+      icon: Icons.undo_outlined,
+      iconSize: toolbarIconSize,
+      controller: _controller!,
+      undo: true,
+    ),
+    HistoryButton(
+      icon: Icons.redo_outlined,
+      iconSize: toolbarIconSize,
+      controller: _controller!,
+      undo: false,
+    ),
+
+    // Add this button
+    SelectHeaderStyleButton(
+      controller: _controller!,
+      axis: Axis.horizontal,
+      iconSize: toolbarIconSize,
+      attributes: const [Attribute.h1, Attribute.h2, Attribute.h3],
+    ),
+
+    //  rest of the buttons
+  ]
+)
+```
+
+With this button, we will be able to define the subheadings
+we want to make available to the person.
+The `axis` parameter defines whether they should be sorted
+horizontally or vertically.
+The `attributes` field defines how many subheadings we want to add.
+In our case, we'll just define three.
+
+Now we need to **define the styling for the headings**.
+For this, we need to change the `customStyles` field
+of the `quillEditor` variable 
+(from the [`QuillEditor`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/editor.dart#L149) class )
+inside `_buildEditor()`.
+
+We are going to make these changes to both
+mobile and web `quillEditor` variables.
+Locate them at check the `customStyles` field.
+Change it to the following:
+
+```dart
+customStyles: DefaultStyles(
+        // Change these -------------
+        h1: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 32,
+            color: Colors.black,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(16, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h2: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 24,
+            color: Colors.black87,
+            height: 1.15,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        h3: DefaultTextBlockStyle(
+          const TextStyle(
+            fontSize: 20,
+            color: Colors.black87,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+          const VerticalSpacing(8, 0),
+          const VerticalSpacing(0, 0),
+          null,
+        ),
+        // Change these -------------
+        // ....
+),
+```
+
+We have changed the pre-existing `h1` field
+and added the `h2` and `h3` fields as well,
+specifying different font weights and sizes and colour
+for each subheading.
+
+And that's it!
+That's all you need to do to change the subheadings!
+
+Awesome job! 👏
+
+
+### 7.2 Adding emojis
+
+Let's add a button that will allow people to add emojis!
+This is useful for both mobile and web platforms 
+(it's more relevant on the latter,
+as there is not a native emoji keyboard to choose from).
+
+You might be wondering that, for mobile applications,
+having a dedicated button to insert emojis is *redudant*,
+because iOS and Android devices offer a native keyboard
+in which you can select an emoji and insert it as text.
+
+However, we're doing this for two purposes:
+- the emoji button is meant to be introduced as a separate feature
+and as a custom button to be shown.
+See https://github.com/dwyl/app/issues/275#issuecomment-1646862277 for more context.
+- showing the native keyboard emoji selection does not work on all platforms in Flutter.
+If this was the case, we could have easily used a package
+like [`keyboard_emoji_picker`](https://pub.dev/packages/keyboard_emoji_picker).
+
+So let's do this!
+
+First, let's install the package we'll use
+to select emojis.
+Simply run `flutter pub add emoji_picker_flutter` 
+and all the dependencies will be installed.
+
+Now that's done with, let's start by creating our emoji picker.
+Let's first create our widget in a separate file.
+Inside `lib`, 
+create a file called `emoji_picker_widget.dart`.
+
+```dart
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+
+/// Emoji picker widget that is offstage.
+/// Shows an emoji picker when [offstageEmojiPicker] is `false`.
+class OffstageEmojiPicker extends StatefulWidget {
+  /// `QuillController` controller that is passed so the controller document is changed when emojis are inserted.
+  final QuillController? quillController;
+
+  /// Determines if the emoji picker is offstage or not.
+  final bool offstageEmojiPicker;
+
+  const OffstageEmojiPicker({required this.offstageEmojiPicker, this.quillController, super.key});
+
+  @override
+  State<OffstageEmojiPicker> createState() => _OffstageEmojiPickerState();
+}
+
+class _OffstageEmojiPickerState extends State<OffstageEmojiPicker> {
+  /// Returns the emoji picker configuration according to screen size.
+  Config _buildEmojiPickerConfig(BuildContext context) {
+    if (ResponsiveBreakpoints.of(context).smallerOrEqualTo(MOBILE)) {
+      return const Config(emojiSizeMax: 32.0, columns: 7);
+    }
+
+    if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
+      return const Config(emojiSizeMax: 24.0, columns: 10);
+    }
+
+    if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
+      return const Config(emojiSizeMax: 16.0, columns: 15);
+    }
+
+    return const Config(emojiSizeMax: 16.0, columns: 30);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Offstage(
+      offstage: widget.offstageEmojiPicker,
+      child: SizedBox(
+        height: 250,
+        child: EmojiPicker(
+          onEmojiSelected: (category, emoji) {
+            if (widget.quillController != null) {
+              // Get pointer selection and insert emoji there
+              final selection = widget.quillController?.selection;
+              widget.quillController?.document.insert(selection!.end, emoji.emoji);
+
+              // Update the pointer after the emoji we've just inserted
+              widget.quillController?.updateSelection(TextSelection.collapsed(offset: selection!.end + emoji.emoji.length), ChangeSource.REMOTE);
+            }
+          },
+          config: _buildEmojiPickerConfig(context),
+        ),
+      ),
+    );
+  }
+}
+```
+
+Let's unpack what we've just implemented.
+The widget we've create is a **stateful widget**
+that receives two parameters:
+
+- `quillController` pertains to the `QuillController` 
+object related ot the editor.
+This controller is used to access the document
+so the emoji can be inserted.
+- `offstageEmojiPicker` is a boolean
+that determines if the widget is meant to be offstage (hidden)
+or not.
+
+In the `build()` function,
+we use the [`Offstage`](https://api.flutter.dev/flutter/widgets/Offstage-class.html)
+class to wrap the widget.
+This will make it possible to show and hide the emoji picker accordingly.
+
+We then use the `EmojiPicker` widget
+from the package we've just downloaded.
+In this widget, we define two parameters:
+
+- `config`, pertaining to the emoji picker configuration.
+We use the `_buildEmojiPickerConfig()` function
+to conditionally change the emoji picker dimensions
+according to the size of the screen.
+- `onEmojiSelected`, which is called after an emoji is selected by the person.
+In this, we use the passed `quillController` to get the position 
+of the pointer and the document.
+With these two, we add the selected emoji
+and update the pointer to *after* the emoji that was inserted.
+This will allow adding consecutive emojis properly
+and maintain the pointer index aligned.
+
+Now all that's left is to
+**use our newly created widget** in our homepage!
+Head over to `lib/home_page.dart`,
+and add a new field inside `HomePageState`.
+
+```dart
+  /// Show emoji picker
+  bool _offstageEmojiPickerOffstage = true;
+```
+
+In the same class,
+we're going to create a callback function
+that is to be called every time the person 
+clicks on the emoji toolbar button 
+(don't worry, we'll create this button in a minute).
+This function will close the keyboard
+and open the emoji picker widget we've just created.
+
+```dart
+  void _onEmojiButtonPressed(BuildContext context) {
+    final isEmojiPickerShown = !_offstageEmojiPickerOffstage;
+
+    // If emoji picker is being shown, we show the keyboard and hide the emoji picker.
+    if (isEmojiPickerShown) {
+      _focusNode.requestFocus();
+      setState(() {
+        _offstageEmojiPickerOffstage = true;
+      });
+    }
+
+    // Otherwise, we do the inverse.
+    else {
+      // Unfocusing when the person clicks away. This is to hide the keyboard.
+      // See https://flutterigniter.com/dismiss-keyboard-form-lose-focus/
+      // and https://www.youtube.com/watch?v=MKrEJtheGPk&t=40s&ab_channel=HeyFlutter%E2%80%A4com.
+      final currentFocus = FocusScope.of(context);
+      if (!currentFocus.hasPrimaryFocus) {
+        SystemChannels.textInput.invokeMethod('TextInput.hide');
+      }
+
+      setState(() {
+        _offstageEmojiPickerOffstage = false;
+      });
+    }
+  }
+```
+
+We are toggling the `_offstageEmojiPickerOffstage` field
+by calling `setState()`, thus causing a re-render
+and properly toggling the emoji picker.
+
+Now all we need to do is
+**add the button to the toolbar to toggle the emoji picker**
+and **add the offstage emoji picker to the widget tree**.
+
+Let's do the first one.
+Locate `_buildEditor` and find the `toolbar` 
+(class `QuillToolbar`) definition.
+In the `children` parameter,
+we're going to add a 
+[`CustomButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/custom_button.dart#L6)
+to these buttons.
+
+```dart
+final toolbar = QuillToolbar(
+  afterButtonPressed: _focusNode.requestFocus,
+  children: [
+    CustomButton(
+      onPressed: () => _onEmojiButtonPressed(context),
+      icon: Icons.emoji_emotions,
+      iconSize: toolbarIconSize,
+    ),
+
+    // Other buttons...
+  ]
+)
+```
+
+As you can see, we are calling the `_onEmojiButtonPressed` function
+we've implemented every time the person taps on the emoji button.
+
+At the end of the function, we're going to return
+the editor with the `OffstageEmojiPicker` widget
+we've initially created.
+
+```dart
+    return SafeArea(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Expanded(
+            flex: 15,
+            child: Container(
+              key: quillEditorKey,
+              color: Colors.white,
+              padding: const EdgeInsets.only(left: 16, right: 16),
+              child: quillEditor,
+            ),
+          ),
+          Container(child: toolbar),
+
+          // Add this ---
+          OffstageEmojiPicker(
+            offstageEmojiPicker: _offstageEmojiPickerOffstage,
+            quillController: _controller,
+          ),
+        ],
+      ),
+    );
+```
+
+And that's it!
+We've just successfully added an emoji picker
+that is correctly toggled when clicking the appropriate button in the toolbar,
+*and* adding the correct changes to the Delta document of the Quill editor.
+
+
+<p align="center">
+  <img width="300" src="https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/assets/17494745/e5cc28fe-5ddf-43da-a820-e369a7622471" />
+</p>
+
+
+### 7.3 Adding embeddable links
+
+This one's the easiest.
+`flutter-quill` already provides a specific button
+which we can invoke that'll do all the work for us,
+including formatting, embedding the link
+and properly adding the change to the controller's document.
+
+Simply add the following snippet of code
+to the `children` field of the `toolbar`
+variable you've worked with earlier.
+
+```dart
+       // ....
+       ToggleStyleButton(
+          attribute: Attribute.strikeThrough,
+          icon: Icons.format_strikethrough,
+          iconSize: toolbarIconSize,
+          controller: _controller!,
+        ),
+
+        // Add this button
+        LinkStyleButton(
+          controller: _controller!,
+          iconSize: toolbarIconSize,
+          linkRegExp: RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'),
+        ),
+
+        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+```
+
+And that's it! 
+We're using the 
+[`LinkStyleButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/link_style_button.dart#L13)
+class with a regular expression that we've defined ourselves
+that will only allow a link to be added if it's valid.
 
 
 # A note about testing 🧪
