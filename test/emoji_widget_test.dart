@@ -1,15 +1,16 @@
 import 'package:app/emoji_picker_widget.dart';
 import 'package:app/home_page.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-
+import 'package:responsive_framework/responsive_framework.dart';
 
 // importing mocks
-import 'widget_test.mocks.dart';
+import './widget_test.mocks.dart';
 
 @GenerateMocks([PlatformService])
 void main() {
@@ -64,5 +65,37 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(emojiPickerWidgetKey).hitTestable(), findsNothing);
+  });
+
+  group('Emoji Picker', () {
+    testWidgets('should be shown and tap on emoji.', (WidgetTester tester) async {
+      // Initialize widget that should show picker
+      final app = MaterialApp(
+        home: const OffstageEmojiPicker(
+          offstageEmojiPicker: false,
+        ),
+        builder: (context, child) => ResponsiveBreakpoints.builder(
+          child: child!,
+          breakpoints: [
+            const Breakpoint(start: 0, end: 425, name: MOBILE),
+            const Breakpoint(start: 426, end: 768, name: TABLET),
+            const Breakpoint(start: 769, end: 1024, name: DESKTOP),
+            const Breakpoint(start: 1025, end: 1440, name: 'LARGE_DESKTOP'),
+            const Breakpoint(start: 1441, end: double.infinity, name: '4K'),
+          ],
+        ),
+      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EmojiPicker), findsOneWidget);
+
+      // Tap on emoji
+      final emoji = find.text('😍');
+      await tester.tap(emoji);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EmojiPicker), findsOneWidget);
+    });
   });
 }
