@@ -23,8 +23,13 @@ class ImageToolbarButton extends StatelessWidget {
   final double toolbarIconSize;
   final QuillController controller;
 
-  const ImageToolbarButton(
-      {required this.toolbarIconSize, required this.platformService, required this.imageFilePicker, required this.controller, super.key,});
+  const ImageToolbarButton({
+    required this.toolbarIconSize,
+    required this.platformService,
+    required this.imageFilePicker,
+    required this.controller,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +70,8 @@ class ImageToolbarButton extends StatelessWidget {
     final file = File(result.files.single.path!);
 
     final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
+    final path = '${appDocDir.path}/${basename(file.path)}';
+    final copiedFile = await file.copy(path);
 
     return copiedFile.path.toString();
   }

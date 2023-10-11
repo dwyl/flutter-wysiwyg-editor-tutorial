@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:app/image_button_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -18,51 +19,28 @@ import 'package:mockito/mockito.dart';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:universal_io/io.dart';
 
 // importing mocks
 import 'widget_test.mocks.dart';
 
-class FakeImagePicker extends ImagePickerPlatform {
+/// Class that is used to override the `getApplicationDocumentsDirectory()` function.
+class FakePathProviderPlatform extends PathProviderPlatform implements Fake {
   @override
-  Future<XFile?> getImageFromSource({
-    required ImageSource source,
-    ImagePickerOptions options = const ImagePickerOptions(),
-  }) async {
-    final data = await rootBundle.load('assets/sample.jpeg');
-    final bytes = data.buffer.asUint8List();
-    final tempDir = await getTemporaryDirectory();
-    final file = await File(
-      '${tempDir.path}/doc.png',
-    ).writeAsBytes(bytes);
-
-    return XFile(file.path);
-  }
-
-  @override
-  Future<List<XFile>> getMultiImageWithOptions({
-    MultiImagePickerOptions options = const MultiImagePickerOptions(),
-  }) async {
-    final data = await rootBundle.load('assets/sample.jpeg');
-    final bytes = data.buffer.asUint8List();
-    final tempDir = await getTemporaryDirectory();
-    final file = await File(
-      '${tempDir.path}/sample.jpeg',
-    ).writeAsBytes(bytes);
-    return <XFile>[
-      XFile(
-        file.path,
-      ),
-    ];
+  Future<String?> getApplicationDocumentsPath() async {
+    // Make sure is the same folder used in the tests.
+    return 'test';
   }
 }
 
 @GenerateMocks([PlatformService, ImageFilePicker])
 void main() {
   // See https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working for context.
-  setUpAll(() {
+  setUp(() {
+    /// Check for context: https://stackoverflow.com/questions/60671728/unable-to-load-assets-in-flutter-tests
+    PathProviderPlatform.instance = FakePathProviderPlatform();
     TestWidgetsFlutterBinding.ensureInitialized();
-    ImagePickerPlatform.instance = FakeImagePicker();
   });
 
   testWidgets('Normal setup', (WidgetTester tester) async {
@@ -73,7 +51,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -102,7 +80,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -119,7 +97,40 @@ void main() {
 
     // Press image button
     // Because of the override, should embed image.x
-    final imageButton = find.byType(ImageButton);
+    final imageButton = find.byType(ImageToolbarButton);
+    await tester.tap(imageButton);
+    await tester.pumpAndSettle();
+
+    // Image correctly added, editor should be visible again.
+    expect(editor.hitTestable(), findsOneWidget);
+  });
+
+    testWidgets('Image picker select image - web version (MAKES REAL REQUEST)', (WidgetTester tester) async {
+    final platformServiceMock = MockPlatformService();
+    final filePickerMock = MockImageFilePicker();
+
+    // Platform is mobile
+    when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
+
+    // Set mock behaviour for `filePickerMock`
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
+
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(
+      App(
+        platformService: platformServiceMock,
+        imageFilePicker: filePickerMock,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Should show editor and toolbar
+    final editor = find.byType(QuillEditor);
+
+    // Press image button
+    // Because of the override, should embed image.x
+    final imageButton = find.byType(ImageToolbarButton);
     await tester.tap(imageButton);
     await tester.pumpAndSettle();
 
@@ -138,7 +149,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
