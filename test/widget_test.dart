@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
@@ -56,7 +57,7 @@ class FakeImagePicker extends ImagePickerPlatform {
   }
 }
 
-@GenerateMocks([PlatformService])
+@GenerateMocks([PlatformService, ImageFilePicker])
 void main() {
   // See https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working for context.
   setUpAll(() {
@@ -66,13 +67,20 @@ void main() {
 
   testWidgets('Normal setup', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
+    final filePickerMock = MockImageFilePicker();
+
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
+
+    // Set mock behaviour for `filePickerMock`
+    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
         platformService: platformServiceMock,
+        imageFilePicker: filePickerMock,
       ),
     );
     await tester.pumpAndSettle();
@@ -88,13 +96,20 @@ void main() {
 
   testWidgets('Image picker select image', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
+    final filePickerMock = MockImageFilePicker();
+
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
+
+    // Set mock behaviour for `filePickerMock`
+    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
         platformService: platformServiceMock,
+        imageFilePicker: filePickerMock,
       ),
     );
     await tester.pumpAndSettle();
@@ -117,13 +132,20 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
 
     final platformServiceMock = MockPlatformService();
-    // Platform is desktop
+    final filePickerMock = MockImageFilePicker();
+
+    // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
+
+    // Set mock behaviour for `filePickerMock`
+    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
         platformService: platformServiceMock,
+        imageFilePicker: filePickerMock,
       ),
     );
     await tester.pumpAndSettle();

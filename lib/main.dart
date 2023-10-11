@@ -10,6 +10,7 @@ void main() {
   runApp(
     App(
       platformService: PlatformService(),
+      imageFilePicker: ImageFilePicker(),
     ),
   );
 }
@@ -18,9 +19,10 @@ void main() {
 /// Entry gateway to the application.
 /// Defining the MaterialApp attributes and Responsive Framework breakpoints.
 class App extends StatelessWidget {
-  const App({required this.platformService, super.key});
+  const App({required this.platformService, required this.imageFilePicker, super.key});
 
   final PlatformService platformService;
+  final ImageFilePicker imageFilePicker;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,10 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         useMaterial3: true,
       ),
-      home: HomePage(platformService: platformService, imageFilePicker: ImageFilePicker(),),
+      home: HomePage(
+        platformService: platformService,
+        imageFilePicker: imageFilePicker,
+      ),
     );
   }
 }

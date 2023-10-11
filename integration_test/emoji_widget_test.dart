@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -9,7 +10,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_io/io.dart';
-
 
 // importing mocks
 import '../test/widget_test.mocks.dart';
@@ -50,7 +50,7 @@ class FakeImagePicker extends ImagePickerPlatform {
   }
 }
 
-@GenerateMocks([PlatformService])
+@GenerateMocks([PlatformService, ImageFilePicker])
 void main() {
   /// Check for context: https://stackoverflow.com/questions/60671728/unable-to-load-assets-in-flutter-tests
   setUpAll(() {
@@ -60,13 +60,20 @@ void main() {
 
   testWidgets('Image picker select image', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
+    final filePickerMock = MockImageFilePicker();
+
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
+
+    // Set mock behaviour for `filePickerMock`
+    final listMockFiles = [PlatformFile(name: 'image.png', size: 200, path: "some_path")];
+    when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
         platformService: platformServiceMock,
+        imageFilePicker: filePickerMock,
       ),
     );
     await tester.pumpAndSettle();
