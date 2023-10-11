@@ -1,4 +1,5 @@
 import 'package:app/home_page.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -38,7 +39,7 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         useMaterial3: true,
       ),
-      home: HomePage(platformService: platformService),
+      home: HomePage(platformService: platformService, imageFilePicker: ImageFilePicker(),),
     );
   }
 }
@@ -49,5 +50,9 @@ class PlatformService {
   bool isWebPlatform() {
     return kIsWeb;
   }
+}
+
+class ImageFilePicker {
+  Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
 }
 // coverage:ignore-end

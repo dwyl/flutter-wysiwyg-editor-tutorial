@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:app/home_page.dart';
 import 'package:app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -25,7 +24,7 @@ class ImageToolbarButton extends StatelessWidget {
   final QuillController controller;
 
   const ImageToolbarButton(
-      {required this.toolbarIconSize, required this.platformService, required this.imageFilePicker, required this.controller, super.key});
+      {required this.toolbarIconSize, required this.platformService, required this.imageFilePicker, required this.controller, super.key,});
 
   @override
   Widget build(BuildContext context) {
