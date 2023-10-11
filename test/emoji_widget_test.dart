@@ -32,7 +32,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg')];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -87,7 +87,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg')];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.

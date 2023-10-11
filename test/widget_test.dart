@@ -9,18 +9,14 @@ import 'package:app/image_button_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
 import 'package:flutter_quill/flutter_quill_test.dart';
 
 import 'package:app/main.dart';
-import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:universal_io/io.dart';
 
 // importing mocks
 import 'widget_test.mocks.dart';
@@ -51,7 +47,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg')];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -80,7 +76,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg')];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -112,8 +108,8 @@ void main() {
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
 
-    // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    // Set mock behaviour for `filePickerMock` with jpeg magic number byte array https://gist.github.com/leommoore/f9e57ba2aa4bf197ebc5
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg', bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0])),];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
@@ -149,7 +145,7 @@ void main() {
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
 
     // Set mock behaviour for `filePickerMock`
-    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: "assets/sample.jpeg")];
+    final listMockFiles = [PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg')];
     when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
     // Build our app and trigger a frame.
