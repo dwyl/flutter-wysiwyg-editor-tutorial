@@ -5,57 +5,63 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:cross_file/cross_file.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/embeds/toolbar/image_button.dart';
 import 'package:flutter_quill/flutter_quill_test.dart';
 
 import 'package:app/main.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_io/io.dart';
 
 // importing mocks
 import 'widget_test.mocks.dart';
 
-/// This attempts to override the `image_picker` plugin inside `flutter-quill`,
-/// but is currently failing.
-///
-/// Please check the links below for more context.
-/// https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working
-/// and https://stackoverflow.com/questions/52028969/testing-flutter-code-that-uses-a-plugin-and-platform-channel
-/// and https://docs.flutter.dev/testing/plugins-in-tests#mock-the-platform-channel
-///
-/// This is currently commented because it crashes with a `PlatformException` stating
-/// the `XFile` instance is an invalid argument (it does the same with `File`).
-///
-/// `XFile` would make sense since the line that calls `image-picker`
-/// is in https://github.com/singerdmx/flutter-quill/blob/36d72c1987f0cb8d6c689c12542600364c07e20f/flutter_quill_extensions/lib/embeds/toolbar/image_video_utils.dart#L147.
-void mockImagePicker(WidgetTester tester) {
-  const channel = MethodChannel('plugins.flutter.io/image_picker');
+class FakeImagePicker extends ImagePickerPlatform {
+  @override
+  Future<XFile?> getImageFromSource({
+    required ImageSource source,
+    ImagePickerOptions options = const ImagePickerOptions(),
+  }) async {
+    final data = await rootBundle.load('assets/sample.jpeg');
+    final bytes = data.buffer.asUint8List();
+    final tempDir = await getTemporaryDirectory();
+    final file = await File(
+      '${tempDir.path}/doc.png',
+    ).writeAsBytes(bytes);
 
-  Future<XFile?> handler(MethodCall methodCall) async {
-    if (methodCall.method == 'pickImage') {
-      final file = XFile('test/sample.jpeg');
-      return file;
-    } else {
-      return null;
-    }
+    return XFile(file.path);
   }
 
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
-      (message) {
-    return handler(message);
-  });
+  @override
+  Future<List<XFile>> getMultiImageWithOptions({
+    MultiImagePickerOptions options = const MultiImagePickerOptions(),
+  }) async {
+    final data = await rootBundle.load('assets/sample.jpeg');
+    final bytes = data.buffer.asUint8List();
+    final tempDir = await getTemporaryDirectory();
+    final file = await File(
+      '${tempDir.path}/sample.jpeg',
+    ).writeAsBytes(bytes);
+    return <XFile>[
+      XFile(
+        file.path,
+      ),
+    ];
+  }
 }
 
 @GenerateMocks([PlatformService])
 void main() {
-  /// Check for context: https://stackoverflow.com/questions/60671728/unable-to-load-assets-in-flutter-tests
+  // See https://stackoverflow.com/questions/76586920/mocking-imagepicker-in-flutter-integration-tests-not-working for context.
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
+    ImagePickerPlatform.instance = FakeImagePicker();
   });
 
   testWidgets('Normal setup', (WidgetTester tester) async {
@@ -80,14 +86,10 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Select image', (WidgetTester tester) async {
+  testWidgets('Image picker select image', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
-
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
-
-    // Mock image
-    // mockImagePicker(tester);
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(
@@ -97,17 +99,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Expect to find the normal page setup
-    expect(find.text('Flutter Quill'), findsOneWidget);
+    // Should show editor and toolbar
+    final editor = find.byType(QuillEditor);
 
-    // Enter 'hi' into Quill Editor.
-    await tester.tap(find.byType(QuillEditor));
-    await tester.quillEnterText(find.byType(QuillEditor), 'hi\n');
-    await tester.pumpAndSettle();
-
+    // Press image button
+    // Because of the override, should embed image.x
     final imageButton = find.byType(ImageButton);
     await tester.tap(imageButton);
     await tester.pumpAndSettle();
+
+    // Image correctly added, editor should be visible again.
+    expect(editor.hitTestable(), findsOneWidget);
   });
 
   testWidgets('Normal setup (web version)', (WidgetTester tester) async {

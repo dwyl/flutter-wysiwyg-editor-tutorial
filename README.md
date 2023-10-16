@@ -1957,18 +1957,18 @@ class _OffstageEmojiPickerState extends State<OffstageEmojiPicker> {
   /// Returns the emoji picker configuration according to screen size.
   Config _buildEmojiPickerConfig(BuildContext context) {
     if (ResponsiveBreakpoints.of(context).smallerOrEqualTo(MOBILE)) {
-      return const Config(emojiSizeMax: 32.0, columns: 7);
+      return const Config(emojiSizeMax: 32.0, columns: 7, recentTabBehavior: RecentTabBehavior.NONE);
     }
 
     if (ResponsiveBreakpoints.of(context).equals(TABLET)) {
-      return const Config(emojiSizeMax: 24.0, columns: 10);
+      return const Config(emojiSizeMax: 24.0, columns: 10, recentTabBehavior: RecentTabBehavior.NONE);
     }
 
     if (ResponsiveBreakpoints.of(context).equals(DESKTOP)) {
-      return const Config(emojiSizeMax: 16.0, columns: 15);
+      return const Config(emojiSizeMax: 16.0, columns: 15, recentTabBehavior: RecentTabBehavior.NONE);
     }
 
-    return const Config(emojiSizeMax: 16.0, columns: 30);
+    return const Config(emojiSizeMax: 16.0, columns: 30, recentTabBehavior: RecentTabBehavior.NONE);
   }
 
   @override
@@ -2021,6 +2021,8 @@ In this widget, we define two parameters:
 We use the `_buildEmojiPickerConfig()` function
 to conditionally change the emoji picker dimensions
 according to the size of the screen.
+We are also setting the `recentTabBehavior` so it doesn't show 
+the "Recents" tab as the default one.
 - `onEmojiSelected`, which is called after an emoji is selected by the person.
 In this, we use the passed `quillController` to get the position 
 of the pointer and the document.

@@ -1,15 +1,17 @@
 import 'package:app/emoji_picker_widget.dart';
 import 'package:app/home_page.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/main.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
-
+import 'package:responsive_framework/responsive_framework.dart';
 
 // importing mocks
-import 'widget_test.mocks.dart';
+import './widget_test.mocks.dart';
 
 @GenerateMocks([PlatformService])
 void main() {
@@ -64,5 +66,76 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(emojiPickerWidgetKey).hitTestable(), findsNothing);
+  });
+
+    testWidgets('Testing focus change when clicking on emoji, then editor, then emoji', (WidgetTester tester) async {
+    // Set size because it's needed to correctly tap on emoji picker
+    await tester.binding.setSurfaceSize(const Size(380, 800));
+
+    final platformServiceMock = MockPlatformService();
+    // Platform is mobile
+    when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
+
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(
+      App(
+        platformService: platformServiceMock,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Expect to find the normal page setup and emoji picker not being shown
+    expect(find.text('Flutter Quill'), findsOneWidget);
+    expect(find.byKey(emojiPickerWidgetKey).hitTestable(), findsNothing);
+
+    // Click on emoji button should show the emoji picker
+    var emojiIcon = find.byIcon(Icons.emoji_emotions);
+
+    await tester.tap(emojiIcon);
+    await tester.pumpAndSettle();
+
+    emojiIcon = find.byIcon(Icons.emoji_emotions);
+
+    // Expect the emoji picker being shown
+    expect(find.byKey(emojiButtonKey).hitTestable(), findsOneWidget);
+
+    // Tap on editor
+    final editor = find.byType(QuillEditor);
+    await tester.tap(editor);
+    await tester.pumpAndSettle();
+
+    // Tap on emoji icon to close the emoji pickers
+    await tester.tap(emojiIcon);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('should be shown and tap on emoji.', (WidgetTester tester) async {
+    // Initialize widget that should show picker
+    final app = MaterialApp(
+      home: const OffstageEmojiPicker(
+        offstageEmojiPicker: false,
+      ),
+      builder: (context, child) => ResponsiveBreakpoints.builder(
+        child: child!,
+        breakpoints: [
+          const Breakpoint(start: 0, end: 425, name: MOBILE),
+          const Breakpoint(start: 426, end: 768, name: TABLET),
+          const Breakpoint(start: 769, end: 1024, name: DESKTOP),
+          const Breakpoint(start: 1025, end: 1440, name: 'LARGE_DESKTOP'),
+          const Breakpoint(start: 1441, end: double.infinity, name: '4K'),
+        ],
+      ),
+    );
+    await tester.pumpWidget(app);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EmojiPicker), findsOneWidget);
+
+    // Tap on emoji
+    final emoji = find.text('😍');
+    await tester.tap(emoji);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EmojiPicker), findsOneWidget);
   });
 }

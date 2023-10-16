@@ -1,11 +1,14 @@
-import 'package:app/emoji_picker_widget.dart';
-import 'package:app/home_page.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app/main.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_io/io.dart';
 
 
 // importing mocks
@@ -13,14 +16,49 @@ import '../test/widget_test.mocks.dart';
 
 /// Run `flutter test integration_test` with a device connected to see it running on the real device.
 
+class FakeImagePicker extends ImagePickerPlatform {
+  @override
+  Future<XFile?> getImageFromSource({
+    required ImageSource source,
+    ImagePickerOptions options = const ImagePickerOptions(),
+  }) async {
+    final data = await rootBundle.load('assets/sample.jpeg');
+    final bytes = data.buffer.asUint8List();
+    final tempDir = await getTemporaryDirectory();
+    final file = await File(
+      '${tempDir.path}/doc.png',
+    ).writeAsBytes(bytes);
+
+    return XFile(file.path);
+  }
+
+  @override
+  Future<List<XFile>> getMultiImageWithOptions({
+    MultiImagePickerOptions options = const MultiImagePickerOptions(),
+  }) async {
+    final data = await rootBundle.load('assets/sample.jpeg');
+    final bytes = data.buffer.asUint8List();
+    final tempDir = await getTemporaryDirectory();
+    final file = await File(
+      '${tempDir.path}/sample.jpeg',
+    ).writeAsBytes(bytes);
+    return <XFile>[
+      XFile(
+        file.path,
+      ),
+    ];
+  }
+}
+
 @GenerateMocks([PlatformService])
 void main() {
   /// Check for context: https://stackoverflow.com/questions/60671728/unable-to-load-assets-in-flutter-tests
   setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
+    ImagePickerPlatform.instance = FakeImagePicker();
   });
 
-  testWidgets('Click on emoji button should show the emoji picker', (WidgetTester tester) async {
+  testWidgets('Image picker select image', (WidgetTester tester) async {
     final platformServiceMock = MockPlatformService();
     // Platform is mobile
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => false);
@@ -33,37 +71,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Expect to find the normal page setup and emoji picker not being shown
-    expect(find.text('Flutter Quill'), findsOneWidget);
-    expect(find.byKey(emojiPickerWidgetKey).hitTestable(), findsNothing);
+    // Should show editor and toolbar
+    final editor = find.byType(QuillEditor);
 
-    // Click on emoji button should show the emoji picker
-    var emojiIcon = find.byIcon(Icons.emoji_emotions);
-
-    await tester.tap(emojiIcon);
+    // Press image button
+    // Because of the override, should embed image.x
+    final imageButton = find.byType(ImageButton);
+    await tester.tap(imageButton);
     await tester.pumpAndSettle();
 
-    emojiIcon = find.byIcon(Icons.emoji_emotions);
-    final emojiPicker = find.byKey(emojiButtonKey);
-
-    // Expect the emoji picker being shown
-    expect(emojiPicker.hitTestable(), findsOneWidget);
-
-    // Tap on smile category
-    await tester.tapAt(const Offset(61, 580));
-    await tester.pumpAndSettle();
-
-    // Tap on smile icon
-    await tester.tapAt(const Offset(14, 632));
-    await tester.pumpAndSettle();
-
-    // Tap on emoji icon to close the emoji pickers
-    emojiIcon = find.byIcon(Icons.emoji_emotions);
-
-    await tester.tap(emojiIcon);
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(emojiPickerWidgetKey).hitTestable(), findsNothing);
-    //expect(find.text('😀'), findsOneWidget);
+    // Image correctly added, editor should be visible again.
+    expect(editor.hitTestable(), findsOneWidget);
   });
 }
