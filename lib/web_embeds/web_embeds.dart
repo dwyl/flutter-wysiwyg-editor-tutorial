@@ -66,9 +66,7 @@ class ImageEmbedBuilderWeb extends EmbedBuilder {
       ),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.45,
-        child: HtmlElementView(
-          viewType: imageUrl,
-        ),
+        child: Image.network(imageUrl),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:app/image_button_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -59,6 +60,8 @@ void main() {
   });
 
   testWidgets('Image picker select image', (WidgetTester tester) async {
+    final clientMock = MockClient();
+
     final platformServiceMock = MockPlatformService();
     final filePickerMock = MockImageFilePicker();
 
@@ -72,6 +75,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
+        client: clientMock,
         platformService: platformServiceMock,
         imageFilePicker: filePickerMock,
       ),
@@ -83,7 +87,7 @@ void main() {
 
     // Press image button
     // Because of the override, should embed image.x
-    final imageButton = find.byType(ImageButton);
+    final imageButton = find.byType(ImageToolbarButton);
     await tester.tap(imageButton);
     await tester.pumpAndSettle();
 

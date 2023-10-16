@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:http/http.dart' as http;
 
 import 'image_button_widget.dart';
 import 'web_embeds/web_embeds.dart';
@@ -26,11 +27,17 @@ class HomePage extends StatefulWidget {
   const HomePage({
     required this.platformService,
     required this.imageFilePicker,
-    super.key,
+    super.key, required this.client,
   });
 
+  /// Platform service used to check if the user is on mobile.
   final PlatformService platformService;
+
+  /// Image file picker service that opens File Picker and returns result
   final ImageFilePicker imageFilePicker;
+
+  /// HTTP client used to make network requests
+  final http.Client client;
 
   @override
   HomePageState createState() => HomePageState();
@@ -348,6 +355,7 @@ class HomePageState extends State<HomePage> {
         ),
         ImageToolbarButton(
           controller: _controller!,
+          client: widget.client,
           imageFilePicker: widget.imageFilePicker,
           platformService: widget.platformService,
           toolbarIconSize: toolbarIconSize,

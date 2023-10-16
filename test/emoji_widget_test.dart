@@ -25,6 +25,7 @@ void main() {
     // Set size because it's needed to correctly tap on emoji picker
     await tester.binding.setSurfaceSize(const Size(380, 800));
 
+    final clientMock = MockClient();
     final platformServiceMock = MockPlatformService();
     final filePickerMock = MockImageFilePicker();
 
@@ -38,6 +39,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
+        client: clientMock,
         platformService: platformServiceMock,
         imageFilePicker: filePickerMock,
       ),
@@ -80,6 +82,8 @@ void main() {
     // Set size because it's needed to correctly tap on emoji picker
     await tester.binding.setSurfaceSize(const Size(380, 800));
 
+    final clientMock = MockClient();
+
     final platformServiceMock = MockPlatformService();
     final filePickerMock = MockImageFilePicker();
 
@@ -93,6 +97,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
       App(
+        client: clientMock,
         platformService: platformServiceMock,
         imageFilePicker: filePickerMock,
       ),

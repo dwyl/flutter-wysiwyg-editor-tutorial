@@ -16,6 +16,7 @@ const imageButtonKey = Key('imageButtonKey');
 /// Image button shown in the toolbar to embed images in the editor
 class ImageToolbarButton extends StatelessWidget {
   // Dependency injectors
+  final http.Client client;
   final PlatformService platformService;
   final ImageFilePicker imageFilePicker;
 
@@ -28,7 +29,7 @@ class ImageToolbarButton extends StatelessWidget {
     required this.platformService,
     required this.imageFilePicker,
     required this.controller,
-    super.key,
+    required this.client, super.key,
   });
 
   @override
@@ -101,7 +102,7 @@ class ImageToolbarButton extends StatelessWidget {
     request.files.add(httpImage);
 
     // Check the response and handle accordingly
-    return http.Client().send(request).then((response) async {
+    return client.send(request).then((response) async {
       if (response.statusCode != 200) {
         return null;
       }
