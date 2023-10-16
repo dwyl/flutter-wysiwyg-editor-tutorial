@@ -8,7 +8,7 @@ import '../integration/emoji_widget_test.mocks.dart';
 void main() {
   test('PlatformViewRegistry class initialization', () {
     final registry = PlatformViewRegistry();
-    PlatformViewRegistry.registerViewFactory("viewId", () {});
+    PlatformViewRegistry.registerViewFactory('viewId', () {});
 
     expect(registry, isNotNull);
   });
@@ -21,7 +21,7 @@ void main() {
     // Platform is web
     when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
 
-    registryFix.registerViewFactory(platformServiceMock, "imageUrl", () {});
+    registryFix.registerViewFactory(platformServiceMock, 'imageUrl', () {});
     expect(registryFix, isNotNull);
   });
 }

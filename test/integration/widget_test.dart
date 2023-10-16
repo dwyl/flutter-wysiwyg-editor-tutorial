@@ -36,7 +36,7 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
   });
 
-  group("Setup: ", () {
+  group('Setup: ', () {
     testWidgets('Normal', (WidgetTester tester) async {
       final clientMock = MockClient();
       final platformServiceMock = MockPlatformService();
@@ -103,7 +103,7 @@ void main() {
     });
   });
 
-  group("Image picker: ", () {
+  group('Image picker: ', () {
     testWidgets('Image picker select image', (WidgetTester tester) async {
       final clientMock = MockClient();
 
@@ -156,7 +156,7 @@ void main() {
         when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
         // Set mock behaviour for `requestMock`
-        const body = "{\"url\":\"return_url\"}";
+        const body = '{"url":"return_url"}';
         final bodyBytes = utf8.encode(body);
         when(clientMock.send(any)).thenAnswer((_) async => http.StreamedResponse(Stream<List<int>>.fromIterable([bodyBytes]), 200));
 
@@ -203,7 +203,7 @@ void main() {
         when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
 
         // Set mock behaviour for `requestMock`
-        const body = "{\"url\":\"return_url\"}";
+        const body = '{"url":"return_url"}';
         final bodyBytes = utf8.encode(body);
         when(clientMock.send(any)).thenAnswer((_) async => http.StreamedResponse(Stream<List<int>>.fromIterable([bodyBytes]), 200));
 

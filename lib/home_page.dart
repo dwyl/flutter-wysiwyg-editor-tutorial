@@ -27,7 +27,7 @@ class HomePage extends StatefulWidget {
   const HomePage({
     required this.platformService,
     required this.imageFilePicker,
-    super.key, required this.client,
+    required this.client, super.key,
   });
 
   /// Platform service used to check if the user is on mobile.
