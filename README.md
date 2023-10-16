@@ -45,6 +45,11 @@ in `Flutter` in a few easy steps.
     - [7.1 Header font sizes](#71-header-font-sizes)
     - [7.2 Adding emojis](#72-adding-emojis)
     - [7.3 Adding embeddable links](#73-adding-embeddable-links)
+  - [8. Custom image button](#8-custom-image-button)
+    - [8.1 Creating the new custom button](#81-creating-the-new-custom-button)
+    - [8.2 Using our new custom button in `HomePage`](#82-using-our-new-custom-button-in-homepage)
+    - [8.3 Small changes in `main.dart`](#83-small-changes-in-maindart)
+    - [8.4 Rendering image instead of web-specific HTML element](#84-rendering-image-instead-of-web-specific-html-element)
 - [A note about testing 🧪](#a-note-about-testing-)
 - [Alternative editors](#alternative-editors)
 - [Found this useful?](#found-this-useful)
@@ -1722,7 +1727,6 @@ Because the function is only called on mobile devices,
 we know for sure that it will run correctly every time.
 
 
-
 ## 6. Give the app a whirl
 
 Now let's see our app in action!
@@ -2189,6 +2193,415 @@ We're using the
 [`LinkStyleButton`](https://github.com/singerdmx/flutter-quill/blob/09113cbc90117c7d9967ed865d132e832a219832/lib/src/widgets/toolbar/link_style_button.dart#L13)
 class with a regular expression that we've defined ourselves
 that will only allow a link to be added if it's valid.
+
+
+## 8. Custom image button
+
+As we've shown before,
+when initializing the toolbar,
+we can set if we want to show the [`ImageButton`](https://github.com/singerdmx/flutter-quill/blob/48ffee67b4b01b9610c2148bff7a676aa20d65b7/flutter_quill_extensions/lib/embeds/toolbar/image_button.dart#L8) 
+or not.
+
+```dart
+final embedButtons = FlutterQuillEmbeds.buttons(
+      // Showing only necessary default buttons
+      showCameraButton: false,
+      showFormulaButton: false,
+      showVideoButton: false,
+      showImageButton: true,
+
+      // `onImagePickCallback` is called after image is picked on mobile platforms
+      onImagePickCallback: _onImagePickCallback,
+
+      // `webImagePickImpl` is called after image is picked on the web
+      webImagePickImpl: _webImagePickImpl,
+
+      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
+      mediaPickSettingSelector: (context) {
+        return Future.value(MediaPickSetting.Gallery);
+      },
+    );
+```
+
+However, although this is handy 
+and allows us to quickly embed images in our documents,
+it makes it impossible for us to **test it** because its functionality
+is dependent on checking the [`kIsWeb`](https://api.flutter.dev/flutter/foundation/kIsWeb-constant.html) constant.
+Unfortunately, it is impossible to override this constant when widget testing
+[without mocking it](https://stackoverflow.com/questions/60334121/testing-kisweb-constant-in-flutter).
+
+Because [`kIsWeb` is being used within `flutter-quill`](https://github.com/singerdmx/flutter-quill/blob/48ffee67b4b01b9610c2148bff7a676aa20d65b7/flutter_quill_extensions/lib/embeds/toolbar/image_video_utils.dart#L132), 
+*it's impossible for us to mock it*,
+therefore making it impossible for our widget tests
+to cover the part of codes that use web embeds.
+
+This is not desirable *for us*
+or *for anyone that values the merits of code testing*.
+
+Luckily, we can circumvent this situation
+**by adding our own [`CustomButton`](https://github.com/singerdmx/flutter-quill/blob/8cb14b8155219a94c612467df79206ff09b9b386/lib/src/widgets/toolbar/custom_button.dart#L6)**
+**that has the same behaviour as the original `ImageButton`**.
+
+And this is what we'll do it in this section 😀.
+
+
+### 8.1 Creating the new custom button
+
+Let's create our awesome new custom button.
+In `lib`, create `image_button_widget.dart`
+and use the following code.
+
+```dart
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:app/main.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+
+const imageButtonKey = Key('imageButtonKey');
+
+/// Image button shown in the toolbar to embed images in the editor
+class ImageToolbarButton extends StatelessWidget {
+  // Dependency injectors
+  final http.Client client;
+  final PlatformService platformService;
+  final ImageFilePicker imageFilePicker;
+
+  // Quill arguments
+  final double toolbarIconSize;
+  final QuillController controller;
+
+  const ImageToolbarButton({
+    required this.toolbarIconSize,
+    required this.platformService,
+    required this.imageFilePicker,
+    required this.controller,
+    required this.client, super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomButton(
+      key: imageButtonKey,
+      onPressed: () async {
+        final result = await imageFilePicker.pickImage();
+
+        // The result will be null, if the user aborted the dialog
+        if (result == null || result.files.isEmpty) {
+          return;
+        }
+
+        // Check if it is web-based or not and act accordingly
+        String? imagePath;
+        if (platformService.isWebPlatform()) {
+          imagePath = await _webPickCallback(result);
+        } else {
+          imagePath = await _onMobileCallback(result);
+        }
+
+        if (imagePath == null) {
+          return;
+        }
+
+        // Embed the image in the editor
+        final index = controller.selection.baseOffset;
+        final length = controller.selection.extentOffset - index;
+        controller.replaceText(index, length, BlockEmbed.image(imagePath), null);
+      },
+      icon: Icons.image,
+      iconSize: toolbarIconSize,
+    );
+  }
+
+  /// Returns the file path of the chosen file on mobile platforms.
+  Future<String> _onMobileCallback(FilePickerResult result) async {
+    final file = File(result.files.single.path!);
+
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final path = '${appDocDir.path}/${basename(file.path)}';
+    final copiedFile = await file.copy(path);
+
+    return copiedFile.path.toString();
+  }
+
+  /// Callback that is called after an image is picked whilst on the web platform.
+  /// Returns the URL path of the image.
+  /// Returns null if an error occurred uploading the file or the image was not picked.
+  Future<String?> _webPickCallback(FilePickerResult result) async {
+    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
+    final platformFile = result.files.first;
+    final bytes = platformFile.bytes;
+
+    if (bytes == null) {
+      return null;
+    }
+
+    // Make HTTP request to upload the image to the file
+    const apiURL = 'https://imgup.fly.dev/api/images';
+    final request = http.MultipartRequest('POST', Uri.parse(apiURL));
+
+    final httpImage = http.MultipartFile.fromBytes(
+      'image',
+      bytes,
+      contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!),
+      filename: platformFile.name,
+    );
+    request.files.add(httpImage);
+
+    // Check the response and handle accordingly
+    return client.send(request).then((response) async {
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final responseStream = await http.Response.fromStream(response);
+      final responseData = json.decode(responseStream.body);
+      return responseData['url'];
+    });
+  }
+}
+```
+
+Let's go over each aspect of this new widget
+`ImageToolbarButton`.
+
+- each `CustomButton` requires at least a **`size`** and the `QuillController` controller.
+These are passed as arguments to the widget.
+In addition to these, the `http.Client`, `PlatformService` and `ImageFilePicker` classes
+are also required in our widget solely for testing purposes,
+so we can use dependency injection to test it.
+(do note that we are moving the `ImageFilePicker` class
+to the `lib/main.dart` file for structuring purposes).
+- the widget is simply a `CustomButton`
+with the passed `size` and `controller`.
+We are defining the `onPressed` parameter with a function
+that picks an image, 
+gets the image path according to the platform,
+and adds it to the controller document.
+  - on **mobile platforms**, 
+we are copying the file to a temporary folder
+and returning the path to the image.
+  - on **web platforms**,
+we are uploading the image file to [`imgup`](https://github.com/dwyl/imgup),
+and returning the public URL of the uploaded image.
+
+And that's it!
+Now we need to use our widget,
+and make some changes to our toolbar variable initialization.
+
+
+### 8.2 Using our new custom button in `HomePage`
+
+Head over to `lib/home_page.dart`.
+We're going to use our widget, 
+so we need to make some changes to it.
+
+First, we need to receive 
+instances of the `http.Client` and `ImageFilePicker` classes
+as parameters.
+These will serve as dependency injectors to later be passed on
+to our `ImageToolbarButton` custom button.
+
+> [!NOTE]
+> 
+> We have to pass down these dependency down the widget tree.
+> There are alternatives to avoid doing this. 
+> Check https://github.com/dwyl/learn-flutter#dependency-injection for more information
+> and alternatives to make dependency injection much easier.
+>
+> We're avoiding adding other libraries to this example,
+> as they are out of the scope of this demo.
+
+```dart
+class HomePage extends StatefulWidget {
+  const HomePage({
+    required this.platformService,
+    required this.imageFilePicker,
+    required this.client, super.key,
+  });
+
+  /// Platform service used to check if the user is on mobile.
+  final PlatformService platformService;
+
+  /// Image file picker service that opens File Picker and returns result
+  final ImageFilePicker imageFilePicker;
+
+  /// HTTP client used to make network requests
+  final http.Client client;
+
+  @override
+  HomePageState createState() => HomePageState();
+}
+```
+
+Now, inside `HomePageState`,
+locate the `_buildEditor` function.
+Delete the `embedButtons` variable.
+It will not be needed because we are not going to be using
+any default `flutter-quill` embed buttons, 
+since we're using our new custom one.
+
+In the `toolbar` variable of the `QuillToolbar` class,
+the `children` parameter will be changed.
+At the end of the array, delete the loop that adds the previously deleted `embedButtons`
+and replace it with our new custom widget `ImageToolbarButton`.
+
+```dart
+[
+  
+// ...
+ImageToolbarButton(
+  controller: _controller!,
+  client: widget.client,
+  imageFilePicker: widget.imageFilePicker,
+  platformService: widget.platformService,
+  toolbarIconSize: toolbarIconSize,
+),
+]
+```
+
+In this very same file, 
+you can also safely delete the `_onImagePickCallback`
+and `_webImagePickImpl` functions,
+as they are no longer needed.
+
+Your file should now look like
+[`lib/home_page.dart`](https://github.com/dwyl/flutter-wysiwyg-editor-tutorial/blob/423009980adf5afefba418f1f2a453014fc5063b/lib/home_page.dart)
+
+
+### 8.3 Small changes in `main.dart`
+
+Because `HomePage` now receives a few additional dependency injectors,
+we need to pass them in our `main.dart` file,
+where we set up the whole application.
+
+Change it to the following:
+
+```dart
+import 'package:app/home_page.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'package:http/http.dart' as http;
+
+// coverage:ignore-start
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    App(
+      client: http.Client(),
+      platformService: PlatformService(),
+      imageFilePicker: ImageFilePicker(),
+    ),
+  );
+}
+// coverage:ignore-end
+
+/// Entry gateway to the application.
+/// Defining the MaterialApp attributes and Responsive Framework breakpoints.
+class App extends StatelessWidget {
+  const App({required this.platformService, required this.imageFilePicker, required this.client, super.key});
+
+  final PlatformService platformService;
+  final ImageFilePicker imageFilePicker;
+  final http.Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Editor Demo',
+      builder: (context, child) => ResponsiveBreakpoints.builder(
+        child: child!,
+        breakpoints: [
+          const Breakpoint(start: 0, end: 425, name: MOBILE),
+          const Breakpoint(start: 426, end: 768, name: TABLET),
+          const Breakpoint(start: 769, end: 1440, name: DESKTOP),
+          const Breakpoint(start: 1441, end: double.infinity, name: '4K'),
+        ],
+      ),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+        useMaterial3: true,
+      ),
+      home: HomePage(
+        client: client,
+        platformService: platformService,
+        imageFilePicker: imageFilePicker,
+      ),
+    );
+  }
+}
+
+// coverage:ignore-start
+/// Platform service class that tells if the platform is web-based or not
+class PlatformService {
+  bool isWebPlatform() {
+    return kIsWeb;
+  }
+}
+
+class ImageFilePicker {
+  Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
+}
+// coverage:ignore-end
+```
+
+And you're done!
+Awesome job! 🎉
+
+
+### 8.4 Rendering image instead of web-specific HTML element
+
+In `lib/web_embeds/web_embeds.dart`,
+we are rendering the image like so:
+
+```dart
+child: HtmlElementView(
+  viewType: imageUrl,
+),
+```
+
+Although this is useful in web-based platforms,
+it will make it impossible for us to test our widgets 
+when using this because this class 
+is only available in web-specific platforms.
+
+You would get an error like so:
+
+```
+The following assertion was thrown building HtmlElementView(dirty):
+HtmlElementView is only available on Flutter Web.
+'package:flutter/src/widgets/platform_view.dart':
+Failed assertion: line 366 pos 12: 'kIsWeb'
+```
+
+Because of this, it is best for us to use 
+another class that effectively does the same thing.
+In fact, [`Flutter` recommends us using `HtmlElementView` sparingly](https://api.flutter.dev/flutter/widgets/HtmlElementView-class.html).
+Therefore, let's use the [`Image` class](https://api.flutter.dev/flutter/widgets/Image-class.html)!
+
+Simply change it to:
+
+```dart
+child: Image.network(imageUrl),
+```
+
+And you're done! 
+It will still work on both platforms.
+The only discernable difference is that, 
+with the previous option,
+one could right-click on the image and save to the computer.
+Instead, the image is now part of the `Flutter` canvas that is drawn 
+as part of [`Flutter`'s web renderers](https://docs.flutter.dev/platform-integration/web/renderers).
+
 
 
 # A note about testing 🧪
