@@ -174,7 +174,7 @@ void main() {
         final editor = find.byType(QuillEditor);
 
         // Press image button
-        // Because of the override, should embed image.x
+        // Because of the override, should embed image.
         final imageButton = find.byType(ImageToolbarButton);
         await tester.tap(imageButton);
         await tester.pumpAndSettle();
@@ -182,6 +182,55 @@ void main() {
         // Image correctly added, editor should be visible again.
         expect(editor.hitTestable(), findsOneWidget);
       });
+    });
+
+    testWidgets('Image picker select image - web version (smaller than mobile)', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(350, 600);
+      tester.view.devicePixelRatio = 1.0;
+
+      mockNetworkImagesFor(() async {
+        final clientMock = MockClient();
+        final platformServiceMock = MockPlatformService();
+        final filePickerMock = MockImageFilePicker();
+
+        // Platform is web
+        when(platformServiceMock.isWebPlatform()).thenAnswer((_) => true);
+
+        // Set mock behaviour for `filePickerMock` with jpeg magic number byte array https://gist.github.com/leommoore/f9e57ba2aa4bf197ebc5
+        final listMockFiles = [
+          PlatformFile(name: 'sample.jpeg', size: 200, path: 'assets/sample.jpeg', bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0])),
+        ];
+        when(filePickerMock.pickImage()).thenAnswer((_) async => Future<FilePickerResult?>.value(FilePickerResult(listMockFiles)));
+
+        // Set mock behaviour for `requestMock`
+        const body = "{\"url\":\"return_url\"}";
+        final bodyBytes = utf8.encode(body);
+        when(clientMock.send(any)).thenAnswer((_) async => http.StreamedResponse(Stream<List<int>>.fromIterable([bodyBytes]), 200));
+
+        // Build our app and trigger a frame.
+        await tester.pumpWidget(
+          App(
+            client: clientMock,
+            platformService: platformServiceMock,
+            imageFilePicker: filePickerMock,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Should show editor and toolbar
+        final editor = find.byType(QuillEditor);
+
+        // Press image button
+        // Because of the override, should embed image.
+        final imageButton = find.byType(ImageToolbarButton);
+        await tester.tap(imageButton);
+        await tester.pumpAndSettle();
+
+        // Image correctly added, editor should be visible again.
+        expect(editor.hitTestable(), findsOneWidget);
+      });
+
+      tester.view.resetPhysicalSize();
     });
   });
 }
