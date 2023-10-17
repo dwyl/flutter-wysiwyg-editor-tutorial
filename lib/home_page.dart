@@ -1,27 +1,20 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:app/emoji_picker_widget.dart';
 import 'package:app/main.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/extensions.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:path/path.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:mime/mime.dart';
-import 'package:http_parser/http_parser.dart';
 
+import 'image_button_widget.dart';
 import 'web_embeds/web_embeds.dart';
 
 const quillEditorKey = Key('quillEditorKey');
 const emojiButtonKey = Key('emojiButtonKey');
-
 
 /// Types of selection that person can make when triple clicking
 enum _SelectionType {
@@ -33,10 +26,18 @@ enum _SelectionType {
 class HomePage extends StatefulWidget {
   const HomePage({
     required this.platformService,
-    super.key,
+    required this.imageFilePicker,
+    required this.client, super.key,
   });
 
+  /// Platform service used to check if the user is on mobile.
   final PlatformService platformService;
+
+  /// Image file picker service that opens File Picker and returns result
+  final ImageFilePicker imageFilePicker;
+
+  /// HTTP client used to make network requests
+  final http.Client client;
 
   @override
   HomePageState createState() => HomePageState();
@@ -294,24 +295,6 @@ class HomePageState extends State<HomePage> {
 
     // Toolbar definitions
     const toolbarIconSize = 18.0;
-    final embedButtons = FlutterQuillEmbeds.buttons(
-      // Showing only necessary default buttons
-      showCameraButton: false,
-      showFormulaButton: false,
-      showVideoButton: false,
-      showImageButton: true,
-
-      // `onImagePickCallback` is called after image is picked on mobile platforms
-      onImagePickCallback: _onImagePickCallback,
-
-      // `webImagePickImpl` is called after image is picked on the web
-      webImagePickImpl: _webImagePickImpl,
-
-      // defining the selector (we only want to open the gallery whenever the person wants to upload an image)
-      mediaPickSettingSelector: (context) {
-        return Future.value(MediaPickSetting.Gallery);
-      },
-    );
 
     // Instantiating the toolbar
     final toolbar = QuillToolbar(
@@ -370,7 +353,13 @@ class HomePageState extends State<HomePage> {
           iconSize: toolbarIconSize,
           linkRegExp: RegExp(r'(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+'),
         ),
-        for (final builder in embedButtons) builder(_controller!, toolbarIconSize, null, null),
+        ImageToolbarButton(
+          controller: _controller!,
+          client: widget.client,
+          imageFilePicker: widget.imageFilePicker,
+          platformService: widget.platformService,
+          toolbarIconSize: toolbarIconSize,
+        ),
       ],
     );
 
@@ -397,66 +386,4 @@ class HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  /// Renders the image picked by imagePicker from local file storage
-  /// You can also upload the picked image to any server (eg : AWS s3
-  /// or Firebase) and then return the uploaded image URL.
-  ///
-  /// It's only called on mobile platforms.
-  Future<String> _onImagePickCallback(File file) async {
-    final appDocDir = await getApplicationDocumentsDirectory();
-    final copiedFile = await file.copy('${appDocDir.path}/${basename(file.path)}');
-    return copiedFile.path.toString();
-  }
-
-  /// Callback that is called after an image is picked whilst on the web platform.
-  /// Returns the URL of the image.
-  /// Returns null if an error occurred uploading the file or the image was not picked.
-  Future<String?> _webImagePickImpl(OnImagePickCallback onImagePickCallback) async {
-    // Lets the user pick one file; files with any file extension can be selected
-    final result = await ImageFilePicker().pickImage();
-
-    // The result will be null, if the user aborted the dialog
-    if (result == null || result.files.isEmpty) {
-      return null;
-    }
-
-    // Read file as bytes (https://github.com/miguelpruivo/flutter_file_picker/wiki/FAQ#q-how-do-i-access-the-path-on-web)
-    final platformFile = result.files.first;
-    final bytes = platformFile.bytes;
-
-    if (bytes == null) {
-      return null;
-    }
-
-    // Make HTTP request to upload the image to the file
-    const apiURL = 'https://imgup.fly.dev/api/images';
-    final request = http.MultipartRequest('POST', Uri.parse(apiURL));
-
-    final httpImage = http.MultipartFile.fromBytes(
-      'image',
-      bytes,
-      contentType: MediaType.parse(lookupMimeType('', headerBytes: bytes)!),
-      filename: platformFile.name,
-    );
-    request.files.add(httpImage);
-
-    // Check the response and handle accordingly
-    return http.Client().send(request).then((response) async {
-      if (response.statusCode != 200) {
-        return null;
-      }
-
-      final responseStream = await http.Response.fromStream(response);
-      final responseData = json.decode(responseStream.body);
-      return responseData['url'];
-    });
-  }
 }
-
-// coverage:ignore-start
-/// Image file picker wrapper class
-class ImageFilePicker {
-  Future<FilePickerResult?> pickImage() => FilePicker.platform.pickFiles(type: FileType.image);
-}
-// coverage:ignore-end
